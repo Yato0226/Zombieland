@@ -836,8 +836,8 @@ namespace ZombieLand
 			if (terrain.modContentPack.IsCoreMod == false)
 			{
 				if (false
-					|| aff.Contains(TerrainAffordanceDefOf.Diggable)
-					|| aff.Contains(TerrainAffordanceDefOf.GrowSoil)
+					|| aff.Contains(TerrainAffordanceDefOf.Light)
+					|| aff.Contains(TerrainAffordanceDefOf.Medium)
 					)
 					return true;
 				return false;

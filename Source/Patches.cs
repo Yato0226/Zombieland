@@ -445,6 +445,7 @@ namespace ZombieLand
 				ZombieTicker.PercentTicking = newPercentZombiesTicked;
 			}
 		}
+
 		[HarmonyPatch(typeof(Verse.TickManager))]
 		[HarmonyPatch(nameof(Verse.TickManager.DoSingleTick))]
 		static class TickManager_DoSingleTick_Patch
@@ -454,6 +455,7 @@ namespace ZombieLand
 				ZombieTicker.DoSingleTick();
 			}
 		}
+
 		[HarmonyPatch(typeof(Verse.TickManager))]
 		[HarmonyPatch(nameof(Verse.TickManager.NothingHappeningInGame))]
 		static class Verse_TickManager_NothingHappeningInGame_Patch
@@ -687,35 +689,29 @@ namespace ZombieLand
 
 		// aim chainsaw
 		//
-		[HarmonyPatch(typeof(PawnRenderer))]
-		[HarmonyPatch(nameof(PawnRenderer.DrawEquipment))]
-		static class PawnRenderer_DrawEquipment_Patch
+		[HarmonyPatch(typeof(PawnRenderUtility))]
+		[HarmonyPatch(nameof(PawnRenderUtility.DrawEquipmentAndApparelExtras))]
+		static class PawnRenderUtility_DrawEquipmentAndApparelExtras_Patch
 		{
 			static bool Prefix(PawnRenderer __instance, Pawn ___pawn, Vector3 rootLoc, Rot4 pawnRotation, PawnRenderFlags flags)
 			{
 				if (___pawn.equipment?.Primary is not Chainsaw chainsaw)
 					return true;
-
 				if (___pawn.Dead || ___pawn.Spawned == false)
 					return true;
 				if ((flags & PawnRenderFlags.NeverAimWeapon) != PawnRenderFlags.None)
 					return true;
 				if (chainsaw.running == false)
 					return true;
-
-				if (chainsaw.swinging == false/* && ___pawn.Drafted && Find.Selector.IsSelected(___pawn) == false*/)
+				if (chainsaw.swinging == false)
 					return true;
-
 				var angle = chainsaw.angle;
-
 				var vector = new Vector3(0f, (pawnRotation == Rot4.North) ? (-0.0028957527f) : 0.03474903f, 0f);
 				var equipmentDrawDistanceFactor = ___pawn.ageTracker.CurLifeStage.equipmentDrawDistanceFactor;
 				vector += rootLoc + new Vector3(0f, 0f, 0.4f + CustomDefs.Chainsaw.equippedDistanceOffset).RotatedBy(angle) * equipmentDrawDistanceFactor;
-
-				__instance.DrawEquipmentAiming(chainsaw, vector, angle);
+				PawnRenderUtility.DrawEquipmentAiming(chainsaw, vector, angle);
 				if (Find.TickManager.Paused)
 					___pawn.rotationTracker.Face(vector);
-
 				return false;
 			}
 		}
@@ -871,7 +867,7 @@ namespace ZombieLand
 			}
 		}
 
-		// smart melee skips bites 
+		// smart melee skips bites
 		//
 		[HarmonyPatch(typeof(Verb_MeleeAttack))]
 		[HarmonyPatch(nameof(Verb_MeleeAttack.TryCastShot))]
@@ -2623,19 +2619,16 @@ namespace ZombieLand
 
 		// patch to hide zombie names
 		//
-		[HarmonyPatch(typeof(GenMapUI))]
-		[HarmonyPatch(nameof(GenMapUI.DrawPawnLabel))]
-		[HarmonyPatch(new Type[] { typeof(Pawn), typeof(Vector2), typeof(float), typeof(float), typeof(Dictionary<string, string>), typeof(GameFont), typeof(bool), typeof(bool) })]
-		[StaticConstructorOnStartup]
-		static class GenMapUI_DrawPawnLabel_Patch
-		{
-			static bool Prefix(Pawn pawn)
-			{
-				if (pawn is not Zombie zombie)
-					return true;
-				return zombie.wasMapPawnBefore;
-			}
-		}
+		//[HarmonyPatch(typeof(Pawn))]
+		//[HarmonyPatch(nameof(Pawn.DrawGUIOverlay))]
+		//[StaticConstructorOnStartup]
+  //      static class Pawn_DrawGUIOverlay_Patch
+  //      {
+  //          static bool Prefix(Pawn __instance)
+  //          {
+  //              return false;
+  //          }
+		//}
 
 		// patch to fix null exceptions for zombie panels
 		//
@@ -2789,27 +2782,27 @@ namespace ZombieLand
 
 		// make zombies without head not have a headstump
 		//
-		[HarmonyPatch(typeof(PawnGraphicSet))]
-		[HarmonyPatch(nameof(PawnGraphicSet.HeadMatAt))]
-		static class PawnGraphicSet_HeadMatAt_Patch
-		{
-			static readonly Dictionary<int, Material> headStumpGraphics = new();
+		//[HarmonyPatch(typeof(PawnGraphicSet))]
+		//[HarmonyPatch(nameof(PawnGraphicSet.HeadMatAt))]
+		//static class PawnGraphicSet_HeadMatAt_Patch
+		//{
+		//	static readonly Dictionary<int, Material> headStumpGraphics = new();
 
-			static void Postfix(Pawn ___pawn, RotDrawMode bodyCondition, bool stump, ref Material __result)
-			{
-				if (stump == false || ___pawn is not Zombie)
-					return;
+		//	static void Postfix(Pawn ___pawn, RotDrawMode bodyCondition, bool stump, ref Material __result)
+		//	{
+		//		if (stump == false || ___pawn is not Zombie)
+		//			return;
 
-				var id = __result.GetInstanceID() * (bodyCondition == RotDrawMode.Rotting ? -1 : 1);
-				if (headStumpGraphics.TryGetValue(id, out var mat) == false)
-				{
-					var red = bodyCondition == RotDrawMode.Rotting ? 8f : 110f;
-					mat = new Material(__result) { color = new Color(red / 255f, 0, 0) };
-					headStumpGraphics[id] = mat;
-				}
-				__result = mat;
-			}
-		}
+		//		var id = __result.GetInstanceID() * (bodyCondition == RotDrawMode.Rotting ? -1 : 1);
+		//		if (headStumpGraphics.TryGetValue(id, out var mat) == false)
+		//		{
+		//			var red = bodyCondition == RotDrawMode.Rotting ? 8f : 110f;
+		//			mat = new Material(__result) { color = new Color(red / 255f, 0, 0) };
+		//			headStumpGraphics[id] = mat;
+		//		}
+		//		__result = mat;
+		//	}
+		//}
 
 		// update electrical zombie humming
 		//
@@ -2839,443 +2832,443 @@ namespace ZombieLand
 			}
 		}
 
-		[HarmonyPatch(typeof(PawnRenderer))]
-		[HarmonyPatch(nameof(PawnRenderer.RenderPawnAt))]
-		[HarmonyPatch(new Type[] { typeof(Vector3), typeof(Rot4?), typeof(bool) })]
-		static class PawnRenderer_RenderPawnAt_Patch
-		{
-			static readonly float moteAltitute = Altitudes.AltitudeFor(AltitudeLayer.MoteOverhead);
-			static Vector3 leftEyeOffset = new(-0.092f, 0f, -0.08f);
-			static Vector3 rightEyeOffset = new(0.092f, 0f, -0.08f);
+		//[HarmonyPatch(typeof(PawnRenderer))]
+		//[HarmonyPatch(nameof(PawnRenderer.RenderPawnAt))]
+		//[HarmonyPatch(new Type[] { typeof(Vector3), typeof(Rot4?), typeof(bool) })]
+		//static class PawnRenderer_RenderPawnAt_Patch
+		//{
+		//	static readonly float moteAltitute = Altitudes.AltitudeFor(AltitudeLayer.MoteOverhead);
+		//	static Vector3 leftEyeOffset = new(-0.092f, 0f, -0.08f);
+		//	static Vector3 rightEyeOffset = new(0.092f, 0f, -0.08f);
 
-			static Vector3 toxicAuraOffset = new(0f, 0f, 0.1f);
-			const float leanAngle = 15f;
+		//	static Vector3 toxicAuraOffset = new(0f, 0f, 0.1f);
+		//	const float leanAngle = 15f;
 
-			static readonly Color white50 = new(1f, 1f, 1f, 0.5f);
+		//	static readonly Color white50 = new(1f, 1f, 1f, 0.5f);
 
-			static readonly Mesh bodyMesh = MeshPool.GridPlane(new Vector2(1.5f, 1.5f));
-			static readonly Mesh bodyMesh_flipped = MeshPool.GridPlaneFlip(new Vector2(1.5f, 1.5f));
+		//	static readonly Mesh bodyMesh = MeshPool.GridPlane(new Vector2(1.5f, 1.5f));
+		//	static readonly Mesh bodyMesh_flipped = MeshPool.GridPlaneFlip(new Vector2(1.5f, 1.5f));
 
-			static readonly Mesh headMesh = MeshPool.GridPlane(new Vector2(1.5f, 1.5f));
-			static readonly Mesh headMesh_flipped = MeshPool.GridPlaneFlip(new Vector2(1.5f, 1.5f));
+		//	static readonly Mesh headMesh = MeshPool.GridPlane(new Vector2(1.5f, 1.5f));
+		//	static readonly Mesh headMesh_flipped = MeshPool.GridPlaneFlip(new Vector2(1.5f, 1.5f));
 
-			static readonly Mesh shieldMesh = MeshPool.GridPlane(new Vector2(2f, 2f));
-			static readonly Mesh shieldMesh_flipped = MeshPool.GridPlaneFlip(new Vector2(2f, 2f));
+		//	static readonly Mesh shieldMesh = MeshPool.GridPlane(new Vector2(2f, 2f));
+		//	static readonly Mesh shieldMesh_flipped = MeshPool.GridPlaneFlip(new Vector2(2f, 2f));
 
-			[HarmonyPriority(Priority.First)]
-			static bool Prefix(PawnRenderer __instance, Vector3 drawLoc)
-			{
-				if (__instance.graphics.pawn is not Zombie zombie)
-					return true;
+		//	[HarmonyPriority(Priority.First)]
+		//	static bool Prefix(PawnRenderer __instance, Vector3 drawLoc)
+		//	{
+		//		if (__instance.graphics.pawn is not Zombie zombie)
+		//			return true;
 
-				if (zombie.needsGraphics)
-				{
-					var tickManager = zombie.Map?.GetComponent<TickManager>();
-					if (tickManager != null)
-						tickManager.AllZombies().DoIf(z => z.needsGraphics, z =>
-						{
-							z.needsGraphics = false;
-							ZombieGenerator.AssignNewGraphics(z);
-						});
-					else
-					{
-						zombie.needsGraphics = false;
-						ZombieGenerator.AssignNewGraphics(zombie);
-					}
-				}
+		//		if (zombie.needsGraphics)
+		//		{
+		//			var tickManager = zombie.Map?.GetComponent<TickManager>();
+		//			if (tickManager != null)
+		//				tickManager.AllZombies().DoIf(z => z.needsGraphics, z =>
+		//				{
+		//					z.needsGraphics = false;
+		//					ZombieGenerator.AssignNewGraphics(z);
+		//				});
+		//			else
+		//			{
+		//				zombie.needsGraphics = false;
+		//				ZombieGenerator.AssignNewGraphics(zombie);
+		//			}
+		//		}
 
-				if (zombie.state == ZombieState.Emerging)
-				{
-					zombie.Render(__instance, drawLoc);
-					return false;
-				}
+		//		if (zombie.state == ZombieState.Emerging)
+		//		{
+		//			zombie.Render(__instance, drawLoc);
+		//			return false;
+		//		}
 
-				return true;
-			}
+		//		return true;
+		//	}
 
-			[HarmonyPriority(Priority.First)]
-			static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-			{
-				var list = instructions.ToList();
-				var ret = list.Last();
-				if (ret.opcode != OpCodes.Ret)
-					Error("Expected ret in PawnRenderer.RenderPawnAt");
-				ret.opcode = OpCodes.Ldarg_0;
-				list.Add(new CodeInstruction(OpCodes.Ldarg_1));
-				list.Add(CodeInstruction.Call(() => RenderExtras(null, Vector3.zero)));
-				list.Add(new CodeInstruction(OpCodes.Ret));
-				return list;
-			}
+		//	[HarmonyPriority(Priority.First)]
+		//	static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		//	{
+		//		var list = instructions.ToList();
+		//		var ret = list.Last();
+		//		if (ret.opcode != OpCodes.Ret)
+		//			Error("Expected ret in PawnRenderer.RenderPawnAt");
+		//		ret.opcode = OpCodes.Ldarg_0;
+		//		list.Add(new CodeInstruction(OpCodes.Ldarg_1));
+		//		list.Add(CodeInstruction.Call(() => RenderExtras(null, Vector3.zero)));
+		//		list.Add(new CodeInstruction(OpCodes.Ret));
+		//		return list;
+		//	}
 
-			[HarmonyPriority(Priority.First)]
-			static void Postfix(PawnRenderer __instance, Vector3 drawLoc)
-			{
-				if (__instance.graphics.pawn is not Zombie zombie)
-					return;
+		//	[HarmonyPriority(Priority.First)]
+		//	static void Postfix(PawnRenderer __instance, Vector3 drawLoc)
+		//	{
+		//		if (__instance.graphics.pawn is not Zombie zombie)
+		//			return;
 
-				if (zombie.isAlbino && zombie.scream > 0)
-				{
-					var mats = Constants.screamPairs[zombie.scream];
-					var f1 = zombie.scream / 400f;
+		//		if (zombie.isAlbino && zombie.scream > 0)
+		//		{
+		//			var mats = Constants.screamPairs[zombie.scream];
+		//			var f1 = zombie.scream / 400f;
 
-					var size = f1 * 4f;
-					var center = drawLoc + new Vector3(0, 0.1f, 0.25f);
-					GraphicToolbox.DrawScaledMesh(Constants.screamMesh, mats.Item1, center, Quaternion.identity, size, size);
+		//			var size = f1 * 4f;
+		//			var center = drawLoc + new Vector3(0, 0.1f, 0.25f);
+		//			GraphicToolbox.DrawScaledMesh(Constants.screamMesh, mats.Item1, center, Quaternion.identity, size, size);
 
-					var f2 = Mathf.Sin(Mathf.PI * f1);
-					var q = Quaternion.AngleAxis(f2 * 360f, Vector3.up);
-					GraphicToolbox.DrawScaledMesh(MeshPool.plane20, mats.Item2, center, q, 1.5f, 1.5f);
-				}
+		//			var f2 = Mathf.Sin(Mathf.PI * f1);
+		//			var q = Quaternion.AngleAxis(f2 * 360f, Vector3.up);
+		//			GraphicToolbox.DrawScaledMesh(MeshPool.plane20, mats.Item2, center, q, 1.5f, 1.5f);
+		//		}
 
-				if (zombie.Dead)
-					return;
+		//		if (zombie.Dead)
+		//			return;
 
-				if (zombie.IsRopedOrConfused)
-				{
-					var confLoc = drawLoc + new Vector3(0, moteAltitute / 2, 0.75f);
-					if (zombie.Rotation == Rot4.West)
-						confLoc.x -= 0.09f;
-					if (zombie.Rotation == Rot4.East)
-						confLoc.x += 0.09f;
+		//		if (zombie.IsRopedOrConfused)
+		//		{
+		//			var confLoc = drawLoc + new Vector3(0, moteAltitute / 2, 0.75f);
+		//			if (zombie.Rotation == Rot4.West)
+		//				confLoc.x -= 0.09f;
+		//			if (zombie.Rotation == Rot4.East)
+		//				confLoc.x += 0.09f;
 
-					var t = GenTicks.TicksAbs;
-					var n = t % 12;
-					if (n > 6)
-						n = 12 - n;
-					var scale = 1f;
-					if (zombie.ropedBy == null)
-					{
-						var ticks = GenTicks.TicksAbs;
-						if (zombie.paralyzedUntil > ticks)
-							scale = Mathf.Clamp((zombie.paralyzedUntil - ticks) / (float)(GenDate.TicksPerHour / 4), 0, 1);
-					}
-					GraphicToolbox.DrawScaledMesh(MeshPool.plane05, Constants.CONFUSED[n], confLoc, Quaternion.Euler(0, t, 0), scale, scale);
-				}
+		//			var t = GenTicks.TicksAbs;
+		//			var n = t % 12;
+		//			if (n > 6)
+		//				n = 12 - n;
+		//			var scale = 1f;
+		//			if (zombie.ropedBy == null)
+		//			{
+		//				var ticks = GenTicks.TicksAbs;
+		//				if (zombie.paralyzedUntil > ticks)
+		//					scale = Mathf.Clamp((zombie.paralyzedUntil - ticks) / (float)(GenDate.TicksPerHour / 4), 0, 1);
+		//			}
+		//			GraphicToolbox.DrawScaledMesh(MeshPool.plane05, Constants.CONFUSED[n], confLoc, Quaternion.Euler(0, t, 0), scale, scale);
+		//		}
 
-				if (zombie.ropedBy != null && zombie.Spawned && zombie.Dead == false)
-				{
-					var f = zombie.RopingFactorTo(zombie.ropedBy);
-					var n = f <= 0.5f ? 2 : (f <= 0.8f ? 1 : 0);
-					var mat = Constants.RopeLineMat[n];
-					GenDraw.DrawLineBetween(zombie.DrawPos.Yto0(), zombie.ropedBy.DrawPos.Yto0(), AltitudeLayer.PawnRope.AltitudeFor(), mat, 0.2f);
-				}
-			}
+		//		if (zombie.ropedBy != null && zombie.Spawned && zombie.Dead == false)
+		//		{
+		//			var f = zombie.RopingFactorTo(zombie.ropedBy);
+		//			var n = f <= 0.5f ? 2 : (f <= 0.8f ? 1 : 0);
+		//			var mat = Constants.RopeLineMat[n];
+		//			GenDraw.DrawLineBetween(zombie.DrawPos.Yto0(), zombie.ropedBy.DrawPos.Yto0(), AltitudeLayer.PawnRope.AltitudeFor(), mat, 0.2f);
+		//		}
+		//	}
 
-			// we don't use a postfix so that someone that patches and skips RenderPawnAt will also skip RenderExtras
-			static void RenderExtras(PawnRenderer renderer, Vector3 drawLoc)
-			{
-				if (renderer.graphics.pawn is not Zombie zombie)
-					return;
-				if (zombie.state == ZombieState.Emerging || zombie.GetPosture() != PawnPosture.Standing)
-					return;
+		//	// we don't use a postfix so that someone that patches and skips RenderPawnAt will also skip RenderExtras
+		//	static void RenderExtras(PawnRenderer renderer, Vector3 drawLoc)
+		//	{
+		//		if (renderer.graphics.pawn is not Zombie zombie)
+		//			return;
+		//		if (zombie.state == ZombieState.Emerging || zombie.GetPosture() != PawnPosture.Standing)
+		//			return;
 
-				// general zombie drawing
+		//		// general zombie drawing
 
-				Verse.TickManager tm = null;
-				var orientation = zombie.Rotation;
+		//		Verse.TickManager tm = null;
+		//		var orientation = zombie.Rotation;
 
-				if (zombie.IsSuicideBomber)
-				{
-					tm = Find.TickManager;
-					var currentTick = tm.TicksAbs;
-					var interval = (int)zombie.bombTickingInterval;
-					if (currentTick >= zombie.lastBombTick + interval)
-						zombie.lastBombTick = currentTick;
-					else if (currentTick <= zombie.lastBombTick + interval / 2)
-					{
-						if (zombie.state != ZombieState.Emerging)
-						{
-							var bombLightLoc = drawLoc + new Vector3(0, 0.1f, -0.2f);
-							var scale = 1f;
-							if (orientation == Rot4.South || orientation == Rot4.North)
-								bombLightLoc.z += 0.05f;
-							if (orientation == Rot4.North)
-							{ bombLightLoc.y -= 0.1f; scale = 1.5f; }
-							if (orientation == Rot4.West)
-							{ bombLightLoc.x -= 0.25f; bombLightLoc.z -= 0.05f; }
-							if (orientation == Rot4.East)
-							{ bombLightLoc.x += 0.25f; bombLightLoc.z -= 0.05f; }
-							GraphicToolbox.DrawScaledMesh(MeshPool.plane10, Constants.BOMB_LIGHT, bombLightLoc, Quaternion.identity, scale, scale);
-						}
-					}
-				}
+		//		if (zombie.IsSuicideBomber)
+		//		{
+		//			tm = Find.TickManager;
+		//			var currentTick = tm.TicksAbs;
+		//			var interval = (int)zombie.bombTickingInterval;
+		//			if (currentTick >= zombie.lastBombTick + interval)
+		//				zombie.lastBombTick = currentTick;
+		//			else if (currentTick <= zombie.lastBombTick + interval / 2)
+		//			{
+		//				if (zombie.state != ZombieState.Emerging)
+		//				{
+		//					var bombLightLoc = drawLoc + new Vector3(0, 0.1f, -0.2f);
+		//					var scale = 1f;
+		//					if (orientation == Rot4.South || orientation == Rot4.North)
+		//						bombLightLoc.z += 0.05f;
+		//					if (orientation == Rot4.North)
+		//					{ bombLightLoc.y -= 0.1f; scale = 1.5f; }
+		//					if (orientation == Rot4.West)
+		//					{ bombLightLoc.x -= 0.25f; bombLightLoc.z -= 0.05f; }
+		//					if (orientation == Rot4.East)
+		//					{ bombLightLoc.x += 0.25f; bombLightLoc.z -= 0.05f; }
+		//					GraphicToolbox.DrawScaledMesh(MeshPool.plane10, Constants.BOMB_LIGHT, bombLightLoc, Quaternion.identity, scale, scale);
+		//				}
+		//			}
+		//		}
 
-				if (zombie.isHealer && zombie.state != ZombieState.Emerging && zombie.healInfo.Count > 0)
-				{
-					var i = 0;
-					var isNotPaused = Find.TickManager.Paused == false;
-					while (i < zombie.healInfo.Count)
-					{
-						var info = zombie.healInfo[i];
-						if (info.step >= 60)
-						{
-							zombie.healInfo.RemoveAt(i);
-							continue;
-						}
+		//		if (zombie.isHealer && zombie.state != ZombieState.Emerging && zombie.healInfo.Count > 0)
+		//		{
+		//			var i = 0;
+		//			var isNotPaused = Find.TickManager.Paused == false;
+		//			while (i < zombie.healInfo.Count)
+		//			{
+		//				var info = zombie.healInfo[i];
+		//				if (info.step >= 60)
+		//				{
+		//					zombie.healInfo.RemoveAt(i);
+		//					continue;
+		//				}
 
-						var beingHealedIndex = (int)GenMath.LerpDoubleClamped(0, 60, 0, 8, info.step);
-						var mat = Constants.BEING_HEALED[beingHealedIndex];
+		//				var beingHealedIndex = (int)GenMath.LerpDoubleClamped(0, 60, 0, 8, info.step);
+		//				var mat = Constants.BEING_HEALED[beingHealedIndex];
 
-						var healTarget = info.pawn;
-						float angle = healTarget.drawer.renderer.BodyAngle(PawnRenderFlags.None);
-						if (healTarget.Rotation == Rot4.West)
-							angle -= leanAngle;
-						if (healTarget.Rotation == Rot4.East)
-							angle += leanAngle;
-						var healingPos = healTarget.DrawPos + toxicAuraOffset;
-						var quat = Quaternion.AngleAxis(angle, Vector3.up);
-						GraphicToolbox.DrawScaledMesh(MeshPool.plane20, mat, healingPos, quat, 1.5f, 1.5f);
-						GenDraw.DrawLineBetween(zombie.DrawPos, healingPos, GenDraw.LineMatCyan, 0.2f);
+		//				var healTarget = info.pawn;
+		//				float angle = healTarget.drawer.renderer.BodyAngle(PawnRenderFlags.None);
+		//				if (healTarget.Rotation == Rot4.West)
+		//					angle -= leanAngle;
+		//				if (healTarget.Rotation == Rot4.East)
+		//					angle += leanAngle;
+		//				var healingPos = healTarget.DrawPos + toxicAuraOffset;
+		//				var quat = Quaternion.AngleAxis(angle, Vector3.up);
+		//				GraphicToolbox.DrawScaledMesh(MeshPool.plane20, mat, healingPos, quat, 1.5f, 1.5f);
+		//				GenDraw.DrawLineBetween(zombie.DrawPos, healingPos, GenDraw.LineMatCyan, 0.2f);
 
-						if (isNotPaused)
-							info.step++;
-						i++;
-					}
-				}
+		//				if (isNotPaused)
+		//					info.step++;
+		//				i++;
+		//			}
+		//		}
 
-				var location = drawLoc;
-				location.y += Altitudes.AltInc / 2f;
-				if (orientation == Rot4.North)
-					location.y += Altitudes.AltInc / 12f;
+		//		var location = drawLoc;
+		//		location.y += Altitudes.AltInc / 2f;
+		//		if (orientation == Rot4.North)
+		//			location.y += Altitudes.AltInc / 12f;
 
-				if (zombie.hasTankySuit > 0f && zombie.hasTankySuit <= 1f)
-				{
-					var n = (int)(zombie.hasTankySuit * 4f + 0.5f);
+		//		if (zombie.hasTankySuit > 0f && zombie.hasTankySuit <= 1f)
+		//		{
+		//			var n = (int)(zombie.hasTankySuit * 4f + 0.5f);
 
-					var pos = location;
-					var f = 25f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
-					pos.z += (Mathf.Max(0.5f, Mathf.Cos(f)) - 0.7f) / 20f;
+		//			var pos = location;
+		//			var f = 25f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
+		//			pos.z += (Mathf.Max(0.5f, Mathf.Cos(f)) - 0.7f) / 20f;
 
-					if (orientation == Rot4.South || orientation == Rot4.North)
-					{
-						var rot = Quaternion.identity;
-						var frontBack = (int)(orientation == Rot4.South ? FacingIndex.South : FacingIndex.North);
-						GraphicToolbox.DrawScaledMesh(bodyMesh, Constants.TANKYSUITS[frontBack][n], pos, rot, 1f, 1f);
-					}
-					else
-					{
-						var rot = Quaternion.identity;
-						var mesh = orientation == Rot4.West ? bodyMesh_flipped : bodyMesh;
-						GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYSUITS[(int)FacingIndex.East][n], pos, rot, 1f, 1f);
-					}
-				}
+		//			if (orientation == Rot4.South || orientation == Rot4.North)
+		//			{
+		//				var rot = Quaternion.identity;
+		//				var frontBack = (int)(orientation == Rot4.South ? FacingIndex.South : FacingIndex.North);
+		//				GraphicToolbox.DrawScaledMesh(bodyMesh, Constants.TANKYSUITS[frontBack][n], pos, rot, 1f, 1f);
+		//			}
+		//			else
+		//			{
+		//				var rot = Quaternion.identity;
+		//				var mesh = orientation == Rot4.West ? bodyMesh_flipped : bodyMesh;
+		//				GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYSUITS[(int)FacingIndex.East][n], pos, rot, 1f, 1f);
+		//			}
+		//		}
 
-				if (zombie.hasTankyHelmet > 0f && zombie.hasTankyHelmet <= 1f)
-				{
-					var n = (int)(zombie.hasTankyHelmet * 4f + 0.5f);
-					var headOffset = zombie.Drawer.renderer.BaseHeadOffsetAt(orientation);
-					headOffset.y += Altitudes.AltInc / 2f;
+		//		if (zombie.hasTankyHelmet > 0f && zombie.hasTankyHelmet <= 1f)
+		//		{
+		//			var n = (int)(zombie.hasTankyHelmet * 4f + 0.5f);
+		//			var headOffset = zombie.Drawer.renderer.BaseHeadOffsetAt(orientation);
+		//			headOffset.y += Altitudes.AltInc / 2f;
 
-					var pos = location;
-					var f = 25f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
-					pos.z += (Mathf.Max(0.5f, Mathf.Cos(f + 0.8f)) - 0.7f) / 20f;
+		//			var pos = location;
+		//			var f = 25f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
+		//			pos.z += (Mathf.Max(0.5f, Mathf.Cos(f + 0.8f)) - 0.7f) / 20f;
 
-					if (orientation == Rot4.South || orientation == Rot4.North)
-					{
-						var rot = Quaternion.identity;
-						var frontBack = (int)(orientation == Rot4.South ? FacingIndex.South : FacingIndex.North);
-						GraphicToolbox.DrawScaledMesh(headMesh, Constants.TANKYHELMETS[frontBack][n], pos + headOffset, rot, 1f, 1f);
-					}
-					else
-					{
-						var rot = Quaternion.identity;
-						var mesh = orientation == Rot4.West ? headMesh_flipped : headMesh;
-						GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYHELMETS[(int)FacingIndex.East][n], pos + headOffset, rot, 1f, 1f);
-					}
-				}
+		//			if (orientation == Rot4.South || orientation == Rot4.North)
+		//			{
+		//				var rot = Quaternion.identity;
+		//				var frontBack = (int)(orientation == Rot4.South ? FacingIndex.South : FacingIndex.North);
+		//				GraphicToolbox.DrawScaledMesh(headMesh, Constants.TANKYHELMETS[frontBack][n], pos + headOffset, rot, 1f, 1f);
+		//			}
+		//			else
+		//			{
+		//				var rot = Quaternion.identity;
+		//				var mesh = orientation == Rot4.West ? headMesh_flipped : headMesh;
+		//				GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYHELMETS[(int)FacingIndex.East][n], pos + headOffset, rot, 1f, 1f);
+		//			}
+		//		}
 
-				if (zombie.hasTankyShield > 0f && zombie.hasTankyShield <= 1f)
-				{
-					var n = (int)(zombie.hasTankyShield * 4f + 0.5f);
-					var f = Mathf.PI * 4f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
+		//		if (zombie.hasTankyShield > 0f && zombie.hasTankyShield <= 1f)
+		//		{
+		//			var n = (int)(zombie.hasTankyShield * 4f + 0.5f);
+		//			var f = Mathf.PI * 4f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
 
-					if (orientation == Rot4.South || orientation == Rot4.North)
-					{
-						var x = Mathf.Sin(f) * 0.03f;
-						var dx = x + (orientation == Rot4.South ? 0.2f : -0.2f);
-						var dy = orientation == Rot4.South ? 0.2f : -0.2f;
-						var dz = Mathf.Abs(Mathf.Cos(f) * 0.05f) + (orientation == Rot4.South ? -0.2f : 0.2f);
-						var rot = Quaternion.Euler(0f, x * 100f, 0f);
-						var mesh = orientation == Rot4.South ? shieldMesh : shieldMesh_flipped;
-						GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYSHIELDS[(int)FacingIndex.South][n], drawLoc + new Vector3(dx, dy, dz), rot, 0.52f, 0.52f);
-					}
-					else
-					{
-						var dx = orientation == Rot4.West ? -0.45f : 0.45f;
-						var dy = 0.3f;
-						var dz = Mathf.Abs(Mathf.Cos(f) * 0.05f);
-						var rot = Quaternion.Euler(0f, dx * 22f, 0f);
-						var mesh = orientation == Rot4.West ? shieldMesh_flipped : shieldMesh;
-						GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYSHIELDS[(int)FacingIndex.East][n], drawLoc + new Vector3(dx, dy, dz), rot, 0.62f, 0.62f);
-					}
-				}
+		//			if (orientation == Rot4.South || orientation == Rot4.North)
+		//			{
+		//				var x = Mathf.Sin(f) * 0.03f;
+		//				var dx = x + (orientation == Rot4.South ? 0.2f : -0.2f);
+		//				var dy = orientation == Rot4.South ? 0.2f : -0.2f;
+		//				var dz = Mathf.Abs(Mathf.Cos(f) * 0.05f) + (orientation == Rot4.South ? -0.2f : 0.2f);
+		//				var rot = Quaternion.Euler(0f, x * 100f, 0f);
+		//				var mesh = orientation == Rot4.South ? shieldMesh : shieldMesh_flipped;
+		//				GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYSHIELDS[(int)FacingIndex.South][n], drawLoc + new Vector3(dx, dy, dz), rot, 0.52f, 0.52f);
+		//			}
+		//			else
+		//			{
+		//				var dx = orientation == Rot4.West ? -0.45f : 0.45f;
+		//				var dy = 0.3f;
+		//				var dz = Mathf.Abs(Mathf.Cos(f) * 0.05f);
+		//				var rot = Quaternion.Euler(0f, dx * 22f, 0f);
+		//				var mesh = orientation == Rot4.West ? shieldMesh_flipped : shieldMesh;
+		//				GraphicToolbox.DrawScaledMesh(mesh, Constants.TANKYSHIELDS[(int)FacingIndex.East][n], drawLoc + new Vector3(dx, dy, dz), rot, 0.62f, 0.62f);
+		//			}
+		//		}
 
-				if (zombie.isToxicSplasher)
-				{
-					float angle = zombie.drawer.renderer.BodyAngle(PawnRenderFlags.None);
-					if (zombie.Rotation == Rot4.West)
-						angle -= leanAngle;
-					if (zombie.Rotation == Rot4.East)
-						angle += leanAngle;
-					var quat = Quaternion.AngleAxis(angle, Vector3.up);
+		//		if (zombie.isToxicSplasher)
+		//		{
+		//			float angle = zombie.drawer.renderer.BodyAngle(PawnRenderFlags.None);
+		//			if (zombie.Rotation == Rot4.West)
+		//				angle -= leanAngle;
+		//			if (zombie.Rotation == Rot4.East)
+		//				angle += leanAngle;
+		//			var quat = Quaternion.AngleAxis(angle, Vector3.up);
 
-					var idx = ((GenTicks.TicksGame + zombie.thingIDNumber) / 10) % 8;
-					if (idx >= 5)
-						idx = 8 - idx;
-					GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.TOXIC_AURAS[idx], drawLoc + toxicAuraOffset, quat, 1f, 1f);
-				}
+		//			var idx = ((GenTicks.TicksGame + zombie.thingIDNumber) / 10) % 8;
+		//			if (idx >= 5)
+		//				idx = 8 - idx;
+		//			GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.TOXIC_AURAS[idx], drawLoc + toxicAuraOffset, quat, 1f, 1f);
+		//		}
 
-				if (zombie.isMiner)
-				{
-					var headOffset = zombie.Drawer.renderer.BaseHeadOffsetAt(orientation);
-					headOffset.y += Altitudes.AltInc / 2f;
+		//		if (zombie.isMiner)
+		//		{
+		//			var headOffset = zombie.Drawer.renderer.BaseHeadOffsetAt(orientation);
+		//			headOffset.y += Altitudes.AltInc / 2f;
 
-					var pos = location;
-					var f = 25f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
-					pos.z += (Mathf.Max(0.5f, Mathf.Cos(f + 0.8f)) - 0.7f) / 20f;
-					var helmetWiggleAngle = orientation == Rot4.South || orientation == Rot4.North ? 0f : (Mathf.Sin(f) + Mathf.Cos(f + zombie.HashOffset())) * 3f;
-					if (orientation == Rot4.West)
-						helmetWiggleAngle += 5f;
-					if (orientation == Rot4.East)
-						helmetWiggleAngle -= 5f;
-					var rot = Quaternion.AngleAxis(helmetWiggleAngle, Vector3.up);
-					GraphicToolbox.DrawScaledMesh(headMesh, Constants.MINERHELMET[orientation.AsInt][0], pos + headOffset, rot, 1f, 1f);
-				}
+		//			var pos = location;
+		//			var f = 25f * (zombie.pather.nextCellCostLeft / zombie.pather.nextCellCostTotal);
+		//			pos.z += (Mathf.Max(0.5f, Mathf.Cos(f + 0.8f)) - 0.7f) / 20f;
+		//			var helmetWiggleAngle = orientation == Rot4.South || orientation == Rot4.North ? 0f : (Mathf.Sin(f) + Mathf.Cos(f + zombie.HashOffset())) * 3f;
+		//			if (orientation == Rot4.West)
+		//				helmetWiggleAngle += 5f;
+		//			if (orientation == Rot4.East)
+		//				helmetWiggleAngle -= 5f;
+		//			var rot = Quaternion.AngleAxis(helmetWiggleAngle, Vector3.up);
+		//			GraphicToolbox.DrawScaledMesh(headMesh, Constants.MINERHELMET[orientation.AsInt][0], pos + headOffset, rot, 1f, 1f);
+		//		}
 
-				if (zombie.IsActiveElectric && zombie.health.Downed == false)
-				{
-					tm ??= Find.TickManager;
-					var flicker = (tm.TicksAbs / (2 + zombie.thingIDNumber % 2) + zombie.thingIDNumber) % 3;
-					if (flicker != 0 || tm.Paused)
-					{
-						var glowLoc = drawLoc;
-						glowLoc.y -= Altitudes.AltInc / 2f;
+		//		if (zombie.IsActiveElectric && zombie.health.Downed == false)
+		//		{
+		//			tm ??= Find.TickManager;
+		//			var flicker = (tm.TicksAbs / (2 + zombie.thingIDNumber % 2) + zombie.thingIDNumber) % 3;
+		//			if (flicker != 0 || tm.Paused)
+		//			{
+		//				var glowLoc = drawLoc;
+		//				glowLoc.y -= Altitudes.AltInc / 2f;
 
-						var mesh = MeshPool.humanlikeBodySet.MeshAt(orientation);
-						var glowingMaterials = Constants.ELECTRIC_GLOWING[zombie.story.bodyType];
-						var idx = orientation == Rot4.East || orientation == Rot4.West ? 0 : (orientation == Rot4.North ? 1 : 2);
-						GraphicToolbox.DrawScaledMesh(mesh, glowingMaterials[idx], glowLoc, Quaternion.identity, 1f, 1f);
-					}
+		//				var mesh = MeshPool.humanlikeBodySet.MeshAt(orientation);
+		//				var glowingMaterials = Constants.ELECTRIC_GLOWING[zombie.story.bodyType];
+		//				var idx = orientation == Rot4.East || orientation == Rot4.West ? 0 : (orientation == Rot4.North ? 1 : 2);
+		//				GraphicToolbox.DrawScaledMesh(mesh, glowingMaterials[idx], glowLoc, Quaternion.identity, 1f, 1f);
+		//			}
 
-					// stage: 0 2 4 6 8 10 12 14 16 18
-					// shine: x - x x x  x  x  -  x  -
-					// arc  : - - - x -  x  -  -  -  -
-					// new  :                        x
+		//			// stage: 0 2 4 6 8 10 12 14 16 18
+		//			// shine: x - x x x  x  x  -  x  -
+		//			// arc  : - - - x -  x  -  -  -  -
+		//			// new  :                        x
 
-					zombie.electricCounter--;
-					if (zombie.electricCounter <= 0)
-					{
-						var stage = -zombie.electricCounter;
+		//			zombie.electricCounter--;
+		//			if (zombie.electricCounter <= 0)
+		//			{
+		//				var stage = -zombie.electricCounter;
 
-						if (stage == 0)
-						{
-							var info = SoundInfo.InMap(zombie);
-							CustomDefs.ElectricShock.PlayOneShot(info);
-						}
+		//				if (stage == 0)
+		//				{
+		//					var info = SoundInfo.InMap(zombie);
+		//					CustomDefs.ElectricShock.PlayOneShot(info);
+		//				}
 
-						if (stage == 0 || (stage >= 4 && stage <= 12) || stage == 16)
-						{
-							var behind = drawLoc;
-							behind.x += 0.25f;
-							behind.y -= 0.5f;
-							//GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.ELECTRIC_SHINE, behind, quat, 1f, 1f);
-						}
+		//				if (stage == 0 || (stage >= 4 && stage <= 12) || stage == 16)
+		//				{
+		//					var behind = drawLoc;
+		//					behind.x += 0.25f;
+		//					behind.y -= 0.5f;
+		//					//GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.ELECTRIC_SHINE, behind, quat, 1f, 1f);
+		//				}
 
-						if (stage == 6 || stage == 7 || stage == 10 || stage == 11)
-						{
-							if (Rand.Chance(0.1f))
-								zombie.electricAngle = Rand.RangeInclusive(0, 359);
-							var quat = Quaternion.Euler(0, zombie.electricAngle, 0);
-							var idx = Rand.RangeInclusive(0, 3);
-							GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.ELECTRIC_ARCS[idx], drawLoc, quat, 1.5f, 1.5f);
-						}
+		//				if (stage == 6 || stage == 7 || stage == 10 || stage == 11)
+		//				{
+		//					if (Rand.Chance(0.1f))
+		//						zombie.electricAngle = Rand.RangeInclusive(0, 359);
+		//					var quat = Quaternion.Euler(0, zombie.electricAngle, 0);
+		//					var idx = Rand.RangeInclusive(0, 3);
+		//					GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.ELECTRIC_ARCS[idx], drawLoc, quat, 1.5f, 1.5f);
+		//				}
 
-						if (stage >= 18)
-						{
-							zombie.electricCounter = Rand.RangeInclusive(60, 180);
-							if (Find.TickManager.Paused)
-								zombie.electricCounter += Rand.RangeInclusive(300, 600);
-							zombie.electricAngle = Rand.RangeInclusive(0, 359);
-						}
-					}
+		//				if (stage >= 18)
+		//				{
+		//					zombie.electricCounter = Rand.RangeInclusive(60, 180);
+		//					if (Find.TickManager.Paused)
+		//						zombie.electricCounter += Rand.RangeInclusive(300, 600);
+		//					zombie.electricAngle = Rand.RangeInclusive(0, 359);
+		//				}
+		//			}
 
-					if (zombie.absorbAttack.Count > 0)
-					{
-						var pair = zombie.absorbAttack.Pop();
-						var idx = pair.Value;
-						if (idx >= 0)
-						{
-							var facing = pair.Key;
-							var center = drawLoc + Quaternion.AngleAxis(facing + 225f, Vector3.up) * new Vector3(-0.4f, 0, 0.4f);
-							var quat = Quaternion.AngleAxis(facing + 225f, Vector3.up);
-							GraphicToolbox.DrawScaledMesh(MeshPool.plane14, Constants.ELECTRIC_ABSORB[idx], center, quat, 1f, 1f);
-							Tools.PlayAbsorb(zombie);
-						}
-						else if (idx == -2)
-						{
-							for (var facing = 0; facing < 360; facing += 90)
-							{
-								var center = drawLoc + Quaternion.AngleAxis(facing + 225f, Vector3.up) * new Vector3(-0.4f, 0, 0.4f);
-								var quat = Quaternion.AngleAxis(facing + 225f, Vector3.up);
-								GraphicToolbox.DrawScaledMesh(MeshPool.plane14, Constants.ELECTRIC_ABSORB[Rand.RangeInclusive(0, 3)], center, quat, 1f, 1f);
-							}
-							Tools.PlayAbsorb(zombie);
-						}
-					}
-				}
+		//			if (zombie.absorbAttack.Count > 0)
+		//			{
+		//				var pair = zombie.absorbAttack.Pop();
+		//				var idx = pair.Value;
+		//				if (idx >= 0)
+		//				{
+		//					var facing = pair.Key;
+		//					var center = drawLoc + Quaternion.AngleAxis(facing + 225f, Vector3.up) * new Vector3(-0.4f, 0, 0.4f);
+		//					var quat = Quaternion.AngleAxis(facing + 225f, Vector3.up);
+		//					GraphicToolbox.DrawScaledMesh(MeshPool.plane14, Constants.ELECTRIC_ABSORB[idx], center, quat, 1f, 1f);
+		//					Tools.PlayAbsorb(zombie);
+		//				}
+		//				else if (idx == -2)
+		//				{
+		//					for (var facing = 0; facing < 360; facing += 90)
+		//					{
+		//						var center = drawLoc + Quaternion.AngleAxis(facing + 225f, Vector3.up) * new Vector3(-0.4f, 0, 0.4f);
+		//						var quat = Quaternion.AngleAxis(facing + 225f, Vector3.up);
+		//						GraphicToolbox.DrawScaledMesh(MeshPool.plane14, Constants.ELECTRIC_ABSORB[Rand.RangeInclusive(0, 3)], center, quat, 1f, 1f);
+		//					}
+		//					Tools.PlayAbsorb(zombie);
+		//				}
+		//			}
+		//		}
 
-				if (zombie.raging == 0 && zombie.isAlbino == false)
-					return;
+		//		if (zombie.raging == 0 && zombie.isAlbino == false)
+		//			return;
 
-				// raging zombies and albino eyes drawing
+		//		// raging zombies and albino eyes drawing
 
-				drawLoc.y = moteAltitute;
-				var quickHeadCenter = drawLoc + new Vector3(0, 0, 0.35f);
+		//		drawLoc.y = moteAltitute;
+		//		var quickHeadCenter = drawLoc + new Vector3(0, 0, 0.35f);
 
-				if (Find.CameraDriver.CurrentZoom <= CameraZoomRange.Middle)
-				{
-					tm ??= Find.TickManager;
-					var blinkPeriod = 60 + zombie.thingIDNumber % 180; // between 2-5s
-					var eyesOpen = (tm.TicksAbs % blinkPeriod) > 3;
-					if (eyesOpen || tm.CurTimeSpeed == TimeSpeed.Paused)
-					{
-						// the following constant comes from PawnRenderer.RenderPawnInternal
-						var loc = drawLoc + renderer.BaseHeadOffsetAt(orientation) + new Vector3(0, 0.0281250011f, 0);
+		//		if (Find.CameraDriver.CurrentZoom <= CameraZoomRange.Middle)
+		//		{
+		//			tm ??= Find.TickManager;
+		//			var blinkPeriod = 60 + zombie.thingIDNumber % 180; // between 2-5s
+		//			var eyesOpen = (tm.TicksAbs % blinkPeriod) > 3;
+		//			if (eyesOpen || tm.CurTimeSpeed == TimeSpeed.Paused)
+		//			{
+		//				// the following constant comes from PawnRenderer.RenderPawnInternal
+		//				var loc = drawLoc + renderer.BaseHeadOffsetAt(orientation) + new Vector3(0, 0.0281250011f, 0);
 
-						var x = zombie.sideEyeOffset.x;
-						var z = zombie.sideEyeOffset.z;
-						if (x != 0 && z != 0)
-						{
-							// not clear why 75 but it seems to fit
-							var eyeX = x / 75f;
-							var eyeZ = z / 75f;
-							var eyeScale = zombie.isAlbino ? 0.25f : 0.5f;
-							var eyeMat = zombie.isAlbino ? new Material(Constants.RAGE_EYE) { color = white50 } : Constants.RAGE_EYE;
+		//				var x = zombie.sideEyeOffset.x;
+		//				var z = zombie.sideEyeOffset.z;
+		//				if (x != 0 && z != 0)
+		//				{
+		//					// not clear why 75 but it seems to fit
+		//					var eyeX = x / 75f;
+		//					var eyeZ = z / 75f;
+		//					var eyeScale = zombie.isAlbino ? 0.25f : 0.5f;
+		//					var eyeMat = zombie.isAlbino ? new Material(Constants.RAGE_EYE) { color = white50 } : Constants.RAGE_EYE;
 
-							if (orientation == Rot4.West)
-								GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, loc + new Vector3(-eyeX, 0, eyeZ), Quaternion.identity, eyeScale, eyeScale);
+		//					if (orientation == Rot4.West)
+		//						GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, loc + new Vector3(-eyeX, 0, eyeZ), Quaternion.identity, eyeScale, eyeScale);
 
-							else if (orientation == Rot4.East)
-								GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, loc + new Vector3(eyeX, 0, eyeZ), Quaternion.identity, eyeScale, eyeScale);
+		//					else if (orientation == Rot4.East)
+		//						GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, loc + new Vector3(eyeX, 0, eyeZ), Quaternion.identity, eyeScale, eyeScale);
 
-							if (orientation == Rot4.South)
-							{
-								GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, quickHeadCenter + leftEyeOffset, Quaternion.identity, eyeScale, eyeScale);
-								GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, quickHeadCenter + rightEyeOffset, Quaternion.identity, eyeScale, eyeScale);
-							}
-						}
-					}
-				}
+		//					if (orientation == Rot4.South)
+		//					{
+		//						GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, quickHeadCenter + leftEyeOffset, Quaternion.identity, eyeScale, eyeScale);
+		//						GraphicToolbox.DrawScaledMesh(MeshPool.plane05, eyeMat, quickHeadCenter + rightEyeOffset, Quaternion.identity, eyeScale, eyeScale);
+		//					}
+		//				}
+		//			}
+		//		}
 
-				if (orientation == Rot4.West)
-					quickHeadCenter.x -= 0.09f;
-				if (orientation == Rot4.East)
-					quickHeadCenter.x += 0.09f;
+		//		if (orientation == Rot4.West)
+		//			quickHeadCenter.x -= 0.09f;
+		//		if (orientation == Rot4.East)
+		//			quickHeadCenter.x += 0.09f;
 
-				if (zombie.isAlbino == false)
-					GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.RAGE_AURAS[Find.CameraDriver.CurrentZoom], quickHeadCenter, Quaternion.identity, 1f, 1f);
-			}
-		}
+		//		if (zombie.isAlbino == false)
+		//			GraphicToolbox.DrawScaledMesh(MeshPool.plane20, Constants.RAGE_AURAS[Find.CameraDriver.CurrentZoom], quickHeadCenter, Quaternion.identity, 1f, 1f);
+		//	}
+		//}
 
 		// patch to not let zombies sound when they are on fire
 		//
@@ -3371,25 +3364,25 @@ namespace ZombieLand
 
 		// patch for giving zombies accessories like bomb vests or tanky suits
 		//
-		[HarmonyPatch(typeof(PawnGraphicSet))]
-		[HarmonyPatch(nameof(PawnGraphicSet.ResolveApparelGraphics))]
-		static class PawnGraphicSet_ResolveApparelGraphics_Patch
-		{
-			[HarmonyPriority(Priority.Last)]
-			static void Postfix(PawnGraphicSet __instance)
-			{
-				if (__instance.pawn is not Zombie zombie)
-					return;
+		//[HarmonyPatch(typeof(PawnGraphicSet))]
+		//[HarmonyPatch(nameof(PawnGraphicSet.ResolveApparelGraphics))]
+		//static class PawnGraphicSet_ResolveApparelGraphics_Patch
+		//{
+		//	[HarmonyPriority(Priority.Last)]
+		//	static void Postfix(PawnGraphicSet __instance)
+		//	{
+		//		if (__instance.pawn is not Zombie zombie)
+		//			return;
 
-				if (zombie.IsSuicideBomber)
-				{
-					var apparel = new Apparel() { def = CustomDefs.Apparel_BombVest };
-					if (__instance.apparelGraphics.Any(a => a.sourceApparel.def == CustomDefs.Apparel_BombVest) == false)
-						if (ApparelGraphicRecordGetter.TryGetGraphicApparel(apparel, BodyTypeDefOf.Hulk, out var record))
-							__instance.apparelGraphics.Add(record);
-				}
-			}
-		}
+		//		if (zombie.IsSuicideBomber)
+		//		{
+		//			var apparel = new Apparel() { def = CustomDefs.Apparel_BombVest };
+		//			if (__instance.apparelGraphics.Any(a => a.sourceApparel.def == CustomDefs.Apparel_BombVest) == false)
+		//				if (ApparelGraphicRecordGetter.TryGetGraphicApparel(apparel, BodyTypeDefOf.Hulk, out var record))
+		//					__instance.apparelGraphics.Add(record);
+		//		}
+		//	}
+		//}
 
 		// patch to inform zombie generator that apparel texture could not load
 		[HarmonyPatch(typeof(Graphic_Multi))]
@@ -4898,7 +4891,7 @@ namespace ZombieLand
 				// if (maps != null)
 				// 	foreach (var map in maps)
 				// 		map?.GetComponent<TickManager>()?.MapRemoved();
-				// 
+				//
 				// MemoryUtility.ClearAllMapsAndWorld();
 			}
 		}
@@ -5119,21 +5112,21 @@ namespace ZombieLand
 
 		// patch to allow zombies to occupy the same spot without collision
 		//
-		[HarmonyPatch(typeof(Pawn_PathFollower))]
-		[HarmonyPatch(nameof(Pawn_PathFollower.WillCollideWithPawnOnNextPathCell))]
-		static class Pawn_PathFollower_WillCollideWithPawnOnNextPathCell_Patch
-		{
-			[HarmonyPriority(Priority.First)]
-			static bool Prefix(Pawn ___pawn, ref bool __result)
-			{
-				if (___pawn is Zombie)
-				{
-					__result = false;
-					return false;
-				}
-				return true;
-			}
-		}
+		//[HarmonyPatch(typeof(Pawn_PathFollower))]
+		//[HarmonyPatch(nameof(Pawn_PathFollower.WillCollideWithPawnOnNextPathCell))]
+		//static class Pawn_PathFollower_WillCollideWithPawnOnNextPathCell_Patch
+		//{
+		//	[HarmonyPriority(Priority.First)]
+		//	static bool Prefix(Pawn ___pawn, ref bool __result)
+		//	{
+		//		if (___pawn is Zombie)
+		//		{
+		//			__result = false;
+		//			return false;
+		//		}
+		//		return true;
+		//	}
+		//}
 		//
 		[HarmonyPatch(typeof(PawnCollisionTweenerUtility))]
 		[HarmonyPatch(nameof(PawnCollisionTweenerUtility.PawnCollisionPosOffsetFor))]

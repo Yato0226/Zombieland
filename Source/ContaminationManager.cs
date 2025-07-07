@@ -90,13 +90,13 @@ namespace ZombieLand
 		public void Set(Thing thing, float contamination)
 		{
 			contaminations[thing.thingIDNumber] = contamination;
-			if (LOGGING)
-			{
-#pragma warning disable CS0162 // Unreachable code detected
-				Log.ResetMessageCount();
-				Log.Message($"THING {thing} at {thing.SimplePos()} => {(contamination * 100):F1}");
-#pragma warning restore CS0162 // Unreachable code detected
-			}
+//			if (LOGGING)
+//			{
+//#pragma warning disable CS0162 // Unreachable code detected
+//				Log.ResetMessageCount();
+//				Log.Message($"THING {thing} at {thing.SimplePos()} => {(contamination * 100):F1}");
+//#pragma warning restore CS0162 // Unreachable code detected
+//			}
 		}
 
 		public void UpdatePawnHediff(Thing thing, float contamination)
@@ -164,26 +164,26 @@ namespace ZombieLand
 				if (thing == null)
 				{
 					grid[cell] = 0;
-					if (LOGGING)
-					{
-#pragma warning disable CS0162 // Unreachable code detected
-						Log.ResetMessageCount();
-						Log.Message($"CELL {cell.SimplePos()} cleared");
-#pragma warning restore CS0162 // Unreachable code detected
-					}
+//					if (LOGGING)
+//					{
+//#pragma warning disable CS0162 // Unreachable code detected
+//						Log.ResetMessageCount();
+//						Log.Message($"CELL {cell.SimplePos()} cleared");
+//#pragma warning restore CS0162 // Unreachable code detected
+//					}
 				}
 				else
 				{
 					contaminations.Remove(id);
 					UpdatePawnHediff(thing, 0);
 					currentMapDirty = true;
-					if (LOGGING)
-					{
-#pragma warning disable CS0162 // Unreachable code detected
-						Log.ResetMessageCount();
-						Log.Message($"THING {thing} at {thing.SimplePos()} cleared");
-#pragma warning restore CS0162 // Unreachable code detected
-					}
+//					if (LOGGING)
+//					{
+//#pragma warning disable CS0162 // Unreachable code detected
+//						Log.ResetMessageCount();
+//						Log.Message($"THING {thing} at {thing.SimplePos()} cleared");
+//#pragma warning restore CS0162 // Unreachable code detected
+//					}
 				}
 			}
 			else if (contamination > 0)
@@ -194,26 +194,26 @@ namespace ZombieLand
 				if (thing == null)
 				{
 					grid[cell] = contamination;
-					if (LOGGING)
-					{
-#pragma warning disable CS0162 // Unreachable code detected
-						Log.ResetMessageCount();
-						Log.Message($"CELL {cell.SimplePos()} => {(contamination * 100):F1}");
-#pragma warning restore CS0162 // Unreachable code detected
-					}
+//					if (LOGGING)
+//					{
+//#pragma warning disable CS0162 // Unreachable code detected
+//						Log.ResetMessageCount();
+//						Log.Message($"CELL {cell.SimplePos()} => {(contamination * 100):F1}");
+//#pragma warning restore CS0162 // Unreachable code detected
+//					}
 				}
 				else
 				{
 					contaminations[id] = contamination;
 					UpdatePawnHediff(thing, contamination);
 					currentMapDirty = true;
-					if (LOGGING)
-					{
-#pragma warning disable CS0162 // Unreachable code detected
-						Log.ResetMessageCount();
-						Log.Message($"THING {thing} at {thing.SimplePos()} => {(contamination * 100):F1}");
-#pragma warning restore CS0162 // Unreachable code detected
-					}
+//					if (LOGGING)
+//					{
+//#pragma warning disable CS0162 // Unreachable code detected
+//						Log.ResetMessageCount();
+//						Log.Message($"THING {thing} at {thing.SimplePos()} => {(contamination * 100):F1}");
+//#pragma warning restore CS0162 // Unreachable code detected
+//					}
 				}
 			}
 

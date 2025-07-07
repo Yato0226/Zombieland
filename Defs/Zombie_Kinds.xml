@@ -5,9 +5,6 @@
 		<defName>Zombie</defName>
 		<race>Zombie</race>
 		<combatPower>100</combatPower>
-		<backstoryCategories>
-			<li>Civil</li>
-		</backstoryCategories>
 		<defaultFactionType>Zombies</defaultFactionType>
 		<isFighter>true</isFighter>
 		<itemQuality>Shoddy</itemQuality>

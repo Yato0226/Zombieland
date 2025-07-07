@@ -27,7 +27,6 @@
 				<compClass>CompAttachBase</compClass>
 			</li>
 		</comps>
-		<drawGUIOverlay>true</drawGUIOverlay>
 		<race>
 			<fleshType>Normal</fleshType>
 			<needsRest>false</needsRest>
@@ -40,6 +39,7 @@
 		<tradeTags>
 			<li>AnimalInsectSpace</li>
 		</tradeTags>
+		<drawGUIOverlay>false</drawGUIOverlay>
 	</ThingDef>
 
 	<ThingDef Name="Zombie" Class="ZombieLand.ThingDef_Zombie" ParentName="BaseZombie">
@@ -97,7 +97,8 @@
 			</li>
 		</tools>
 		<race>
-			<thinkTreeMain>Zombie</thinkTreeMain>
+		        <thinkTreeMain>Zombie</thinkTreeMain>
+		        <thinkTreeConstant>HumanlikeConstant</thinkTreeConstant>
 			<intelligence>Humanlike</intelligence>
 			<makesFootprints>false</makesFootprints>
 			<lifeExpectancy>9999</lifeExpectancy>
@@ -106,6 +107,7 @@
 			<leatherDef>Leather_Human</leatherDef>
 			<foodType>OmnivoreRoughAnimal</foodType>
 			<body>Human</body>
+		        <renderTree>Humanlike</renderTree>
 			<nameCategory>HumanStandard</nameCategory>
 			<lifeStageAges>
 				<li>
@@ -159,9 +161,11 @@
 			<shaderType>CutoutComplex</shaderType>
 		</graphicData>
 		<race>
-			<intelligence>ToolUser</intelligence>
-			<thinkTreeMain>ZombieBlob</thinkTreeMain>
+		        <thinkTreeMain>ZombieBlob</thinkTreeMain>
+		        <thinkTreeConstant>HumanlikeConstant</thinkTreeConstant>
 			<body>ZombieBlobBody</body>
+		        <renderTree>Humanlike</renderTree>
+			<intelligence>ToolUser</intelligence>
 			<soundMeleeHitPawn>Pawn_Melee_BigBash_HitPawn</soundMeleeHitPawn>
 			<soundMeleeHitBuilding>Pawn_Melee_BigBash_HitBuilding</soundMeleeHitBuilding>
 			<soundMeleeMiss>Pawn_Melee_BigBash_Miss</soundMeleeMiss>
@@ -212,9 +216,11 @@
 			<shaderType>CutoutComplex</shaderType>
 		</graphicData>
 		<race>
-			<intelligence>ToolUser</intelligence>
-			<thinkTreeMain>ZombieSpitter</thinkTreeMain>
+		        <thinkTreeMain>ZombieSpitter</thinkTreeMain>
+		        <thinkTreeConstant>HumanlikeConstant</thinkTreeConstant>
 			<body>ZombieSpitterBody</body>
+		        <renderTree>Humanlike</renderTree>
+			<intelligence>ToolUser</intelligence>
 			<soundMeleeHitPawn>Pawn_Melee_BigBash_HitPawn</soundMeleeHitPawn>
 			<soundMeleeHitBuilding>Pawn_Melee_BigBash_HitBuilding</soundMeleeHitBuilding>
 			<soundMeleeMiss>Pawn_Melee_BigBash_Miss</soundMeleeMiss>

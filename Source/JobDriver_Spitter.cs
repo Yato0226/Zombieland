@@ -147,7 +147,7 @@ namespace ZombieLand
 					break;
 
 				case SpitterState.Moving:
-					var currentMoveState = Mathf.FloorToInt(spitter.Drawer.tweener.MovedPercent() * 3.999f);
+					var currentMoveState = Mathf.FloorToInt(spitter.Drawer.tweener.lastDrawFrame * 3.999f);
 					if (spitter.moveState != currentMoveState)
 					{
 						spitter.moveState = currentMoveState;

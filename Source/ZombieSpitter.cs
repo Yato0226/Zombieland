@@ -11,7 +11,7 @@ namespace ZombieLand
 {
 	public class ZombieSpitter : Pawn
 	{
-		static Mesh mesh = null;
+		//static Mesh mesh = null;
 
 		public SpitterState state = SpitterState.Idle;
 		public int idleCounter = 0;
@@ -83,16 +83,16 @@ namespace ZombieLand
 				CustomDefs.ZombiesRising.PlayOneShotOnCamera(null);
 		}
 
-		public override void Draw()
-		{
-			mesh ??= MeshMakerPlanes.NewPlaneMesh(3f);
-			var v = new Vector3(0.1f, 0f, 0f) * Mathf.Sin(2 * Mathf.PI * Drawer.tweener.MovedPercent());
-			var h = new Vector3(0f, 0.01f, 0f);
-			var materials = aggressive ? Constants.SpitterAggressive : Constants.Spitter;
-			Graphics.DrawMesh(mesh, DrawPos + v, Quaternion.identity, materials[0], 0);
-			Graphics.DrawMesh(mesh, DrawPos + h, Quaternion.identity, materials[1], 0);
-			Graphics.DrawMesh(mesh, DrawPos - v + h + h, Quaternion.identity, materials[2], 0);
-		}
+		//public override void Draw()
+		//{
+		//	mesh ??= MeshMakerPlanes.NewPlaneMesh(3f);
+		//	var v = new Vector3(0.1f, 0f, 0f) * Mathf.Sin(2 * Mathf.PI * Drawer.tweener.MovedPercent());
+		//	var h = new Vector3(0f, 0.01f, 0f);
+		//	var materials = aggressive ? Constants.SpitterAggressive : Constants.Spitter;
+		//	Graphics.DrawMesh(mesh, DrawPos + v, Quaternion.identity, materials[0], 0);
+		//	Graphics.DrawMesh(mesh, DrawPos + h, Quaternion.identity, materials[1], 0);
+		//	Graphics.DrawMesh(mesh, DrawPos - v + h + h, Quaternion.identity, materials[2], 0);
+		//}
 
 		public override string GetInspectString()
 		{

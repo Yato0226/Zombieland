@@ -188,7 +188,7 @@ namespace ZombieLand
 
 			var hediffs1 = pawn.GetHediffsList<Hediff_Injury_ZombieBite>();
 			var hediffs2 = pawn.GetHediffsList<Hediff_MissingPart>().Where(hediff => hediff.lastInjury.IsZombieHediff());
-			var hediffs3 = pawn.GetHediffsList<Hediff_Injury>().Where(hediff => hediff.source.IsZombieType());
+			var hediffs3 = pawn.GetHediffsList<Hediff_Injury>().Where(hediff => hediff.IsZombieType());
 
 			foreach (var hediff in hediffs1)
 				pawn.health.RemoveHediff(hediff);

@@ -236,8 +236,8 @@ namespace ZombieLand
 							return false;
 						if (def == ThingDefOf.Apparel_ShieldBelt)
 							return false;
-						if (def == ThingDefOf.Apparel_SmokepopBelt)
-							return false;
+						//if (def == ThingDefOf.Apparel_SmokepopBelt)
+						//	return false;
 						if (def.thingClass?.Name.Contains("ApparelHolographic") ?? false)
 							return false; // SoS
 						var path = def.apparel.wornGraphicPath;
@@ -292,7 +292,7 @@ namespace ZombieLand
 		static readonly string[] headShapes = { "Normal", "Pointy", "Wide" };
 		static IEnumerator AssignNewGraphicsIterator(Zombie zombie)
 		{
-			zombie.Drawer.renderer.graphics.ResolveAllGraphics();
+			//zombie.Drawer.renderer.SetAllGraphicsDirty();
 			yield return null;
 
 			var headPath = FixGlowingEyeOffset(zombie);
@@ -359,7 +359,7 @@ namespace ZombieLand
 						j++;
 					}
 				}
-				zombie.Drawer.renderer.graphics.nakedGraphic = customBodyGraphic;
+				//zombie.Drawer.renderer.graphics.nakedGraphic = customBodyGraphic;
 
 				var headRequest = new GraphicRequest(typeof(VariableGraphic), headPath, ShaderDatabase.Cutout, Vector2.one, Color.white, Color.white, null, renderPrecedence, new List<ShaderParameter>(), null);
 				var customHeadGraphic = new VariableGraphic { bodyColor = color };
@@ -374,10 +374,12 @@ namespace ZombieLand
 						j++;
 					}
 				}
-				zombie.Drawer.renderer.graphics.headGraphic = customHeadGraphic;
+				//zombie.Drawer.renderer.graphics.headGraphic = customHeadGraphic;
 				// zombie.Drawer.renderer.graphics.headGraphic = zombie.story.headType.GetGraphic(specialColor ?? color.HexColor(), false, true);
 			}
-		}
+            //Log.Message($"[Zombieland] Refreshing graphics for {zombie.Name} in AssignNewGraphicsIterator");
+            zombie.Drawer?.renderer?.SetAllGraphicsDirty();
+        }
 
 		static bool GraphicFileExist(ApparelProperties apparel, string bodyTypeDefName)
 		{
@@ -391,7 +393,6 @@ namespace ZombieLand
 		{
 			var developmentStage = zombie.DevelopmentalStage;
 			var blacklistedApparel = new HashSet<string>(ZombieSettings.Values.blacklistedApparel);
-
 			var possibleApparel = AllApparel[zombie.isMiner][zombie.story.bodyType.defName]
 				.Where(pair => blacklistedApparel.Contains(pair.thing.defName) == false)
 				.Where(pair => pair.thing.apparel.developmentalStageFilter.Has(developmentStage));
@@ -438,7 +439,9 @@ namespace ZombieLand
 					yield return null;
 				}
 			}
-		}
+            //Log.Message($"[Zombieland] Refreshing graphics for {zombie.Name} in GenerateStartingApparelFor");
+            zombie.Drawer?.renderer?.SetAllGraphicsDirty();
+        }
 
 		public static Zombie SpawnZombie(IntVec3 cell, Map map, ZombieType zombieType)
 		{
@@ -487,10 +490,8 @@ namespace ZombieLand
 				Log.Error($"Zombieland caught an exception from another mod while creating a zombie: {ex}");
 				ZombiesSpawning--;
 			}
-
 			ZombiesSpawning++;
 			var zombie = (Zombie)ThingMaker.MakeThing(ZombieDefOf.Zombie.race, null);
-
 			if (RunWithFailureCheck(out var bodyType, out var ex1, () =>
 			{
 				var _bodyType = PrepareZombieType(zombie, zombieType);
@@ -515,7 +516,6 @@ namespace ZombieLand
 			var isChild = BodyTypeDefOf.Child != null && zombie.IsSuicideBomber == false && zombie.IsTanky == false && Rand.Chance(ZombieSettings.Values.childChance);
 			if (isChild)
 				bodyType = BodyTypeDefOf.Child;
-
 			if (RunWithFailureCheck(out var ex3, () =>
 			{
 				zombie.health.hediffSet.Clear();
@@ -527,7 +527,6 @@ namespace ZombieLand
 				zombie.ageTracker.ResetAgeReversalDemand(Pawn_AgeTracker.AgeReversalReason.Initial, true);
 			}))
 			{ Abort(ex3); yield break; }
-
 			if (RunWithFailureCheck(out var ex4, () =>
 			{
 				zombie.needs.SetInitialLevels();
@@ -615,6 +614,8 @@ namespace ZombieLand
 			if (zombie.IsTanky == false && ZombieSettings.Values.disableRandomApparel == false)
 			{
 				it = GenerateStartingApparelFor(zombie);
+                zombie.Drawer.renderer.SetAllGraphicsDirty();
+                zombie.Drawer.renderer.EnsureGraphicsInitialized();
 				looping = true;
 				while (looping)
 				{
@@ -668,7 +669,28 @@ namespace ZombieLand
 				if (zombie.IsTanky)
 					_ = tickManager.tankZombies.Add(zombie);
 			}
-		}
+            if (zombie?.mindState == null)
+                zombie.mindState = new Pawn_MindState(zombie);
+            if (zombie.jobs == null)
+                zombie.jobs = new Pawn_JobTracker(zombie);
+            if (zombie.story == null)
+                zombie.story = new Pawn_StoryTracker(zombie);
+            if (zombie.playerSettings == null)
+                zombie.playerSettings = new Pawn_PlayerSettings(zombie);
+            Log.Message($"Zombie {zombie.Name} spawned: {zombie.Spawned}, map: {zombie.Map?.ToString() ?? "null"}");
+            if (zombie.mindState == null)
+                Log.Warning("Zombie has no mindState!");
+            else if (zombie.mindState.Active == false)
+                Log.Warning("Zombie has no Thinker!");
+            else
+                Log.Message("Zombie has valid AI and ThinkTree!");
+            if (zombie.Dead || zombie.Downed)
+                Log.Warning("Zombie is dead or downed.");
+            else
+                Log.Message("Zombie is alive and active.");
+			//Log.Message($"[Zombieland] Refreshing graphics for {zombie.Name} in SpawnZombieIterativ");
+			zombie.Drawer?.renderer?.SetAllGraphicsDirty();
+        }
 
 		// fixes for other mods
 

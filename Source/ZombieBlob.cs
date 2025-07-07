@@ -13,7 +13,7 @@ namespace ZombieLand
 		static readonly Color color = new(0, 0.8f, 0);
 		static readonly float elementPower = 1f;
 		static readonly float elementRadius = 0.011f;
-		static readonly float[] elementSizes = [2.5f, 2.4f, 1.6f, 1.2f, 1f, 0.9f, 0.9f, 1f, 1f];
+		static readonly float[] elementSizes = {2.5f, 2.4f, 1.6f, 1.2f, 1f, 0.9f, 0.9f, 1f, 1f};
 		// static readonly float[] elementSizes = [1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f];
 
 		static readonly Material debugMaterial = SolidColorMaterials.SimpleSolidColorMaterial(Color.red.ToTransparent(0.2f));
@@ -28,8 +28,8 @@ namespace ZombieLand
 			public Vector4 color;
 		}
 
-		readonly HashSet<IntVec3> cells = [];
-		readonly List<Metaball> metaballs = [];
+        private readonly HashSet<IntVec3> cells = new HashSet<IntVec3>();
+        private readonly List<Metaball> metaballs = new List<Metaball>();
 		readonly ComputeBuffer metaballBuffer = new(MAX_METABALLS, Marshal.SizeOf(typeof(Metaball)));
 
 		Mesh mesh = null;
@@ -168,12 +168,12 @@ namespace ZombieLand
 			return elementSizes[count];
 		}
 
-		public override void Draw()
-		{
-			var offset = new Vector3(centerX, 0, centerZ);
-			Graphics.DrawMesh(debugMesh, DrawPos + offset + new Vector3(0, -0.0001f, 0), Quaternion.identity, debugMaterial, 0);
-			Graphics.DrawMesh(mesh, DrawPos + offset, Quaternion.identity, metaballMaterial, 0);
-		}
+		//public override void Draw()
+		//{
+		//	var offset = new Vector3(centerX, 0, centerZ);
+		//	Graphics.DrawMesh(debugMesh, DrawPos + offset + new Vector3(0, -0.0001f, 0), Quaternion.identity, debugMaterial, 0);
+		//	Graphics.DrawMesh(mesh, DrawPos + offset, Quaternion.identity, metaballMaterial, 0);
+		//}
 
 		public override string GetInspectString()
 		{

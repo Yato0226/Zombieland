@@ -532,8 +532,8 @@ namespace ZombieLand
 				var newLabel = GUI.TextField(tRect, area.Label, textFieldStyle);
 				if (newLabel.Length > 28)
 					newLabel = newLabel.Substring(0, 28);
-				if (newLabel != area.Label)
-					area.SetLabel(newLabel);
+				//if (newLabel != area.Label)
+				//	area.Set(newLabel);
 			}
 			else
 			{

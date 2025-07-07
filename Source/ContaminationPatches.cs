@@ -40,7 +40,7 @@ namespace ZombieLand
 	}
 
 	[HarmonyPatch(typeof(ThingMaker), nameof(ThingMaker.MakeThing))]
-	static file class Thing_MakeThing_Patch
+	static class Thing_MakeThing_Patch
 	{
 		static bool Prepare() => false;
 

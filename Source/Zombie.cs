@@ -344,33 +344,34 @@ namespace ZombieLand
 			if (worldPawns.Contains(this))
 				worldPawns.RemovePawn(this);
 
-			// our graphics
-			var head = Drawer.renderer.graphics.headGraphic as VariableGraphic;
-			head?.Dispose();
-			Drawer.renderer.graphics.headGraphic = null;
+			//our graphics
+			//var head = Drawer.renderer.graphics.headGraphic as VariableGraphic;
+			//head?.Dispose();
+			//Drawer.renderer.graphics.headGraphic = null;
 
-			var naked = Drawer.renderer.graphics.nakedGraphic as VariableGraphic;
-			naked?.Dispose();
-			Drawer.renderer.graphics.nakedGraphic = null;
+			//var naked = Drawer.renderer.graphics.nakedGraphic as VariableGraphic;
+			//naked?.Dispose();
+			//Drawer.renderer.graphics.nakedGraphic = null;
 
-			// vanilla graphics
-			// Drawer.renderer.graphics.furCoveredGraphic.UnCache();
-			// Drawer.renderer.graphics.faceTattooGraphic.UnCache();
-			// Drawer.renderer.graphics.bodyTattooGraphic.UnCache();
-			// Drawer.renderer.graphics.swaddledBabyGraphic.UnCache();
-			// Drawer.renderer.graphics.hairGraphic.UnCache();
-			// Drawer.renderer.graphics.nakedGraphic.UnCache();
-			// Drawer.renderer.graphics.rottingGraphic.UnCache();
-			// Drawer.renderer.graphics.dessicatedGraphic.UnCache();
-			// Drawer.renderer.graphics.packGraphic.UnCache();
-			// Drawer.renderer.graphics.corpseGraphic.UnCache();
-			// Drawer.renderer.graphics.desiccatedHeadGraphic.UnCache();
-			// Drawer.renderer.graphics.skullGraphic.UnCache();
-			// Drawer.renderer.graphics.headStumpGraphic.UnCache();
-			// Drawer.renderer.graphics.desiccatedHeadStumpGraphic.UnCache();
-			// Drawer.renderer.graphics.headGraphic.UnCache();
-			// Drawer.renderer.graphics.beardGraphic.UnCache();
-
+			//vanilla graphics
+			//Drawer.renderer.graphics.furCoveredGraphic.UnCache();
+			//Drawer.renderer.graphics.faceTattooGraphic.UnCache();
+			//Drawer.renderer.graphics.bodyTattooGraphic.UnCache();
+			//Drawer.renderer.graphics.swaddledBabyGraphic.UnCache();
+			//Drawer.renderer.graphics.hairGraphic.UnCache();
+			//Drawer.renderer.graphics.nakedGraphic.UnCache();
+			//Drawer.renderer.graphics.rottingGraphic.UnCache();
+			//Drawer.renderer.graphics.dessicatedGraphic.UnCache();
+			//Drawer.renderer.graphics.packGraphic.UnCache();
+			//Drawer.renderer.graphics.corpseGraphic.UnCache();
+			//Drawer.renderer.graphics.desiccatedHeadGraphic.UnCache();
+			//Drawer.renderer.graphics.skullGraphic.UnCache();
+			//Drawer.renderer.graphics.headStumpGraphic.UnCache();
+			//Drawer.renderer.graphics.desiccatedHeadStumpGraphic.UnCache();
+			//Drawer.renderer.graphics.headGraphic.UnCache();
+			//Drawer.renderer.graphics.beardGraphic.UnCache();
+			//Drawer.renderer.EnsureGraphicsInitialized();
+            //Drawer.renderer.SetAllGraphicsDirty();
 			GlobalTextureAtlasManager.TryMarkPawnFrameSetDirty(this);
 		}
 
@@ -387,7 +388,7 @@ namespace ZombieLand
 				bombTickingInterval = -1f;
 				bombWillGoOff = false;
 				hasTankyShield = -1f;
-				_ = Drawer.renderer.graphics.apparelGraphics.RemoveAll(record => record.sourceApparel?.def == CustomDefs.Apparel_BombVest);
+				//_ = Drawer.renderer.graphics.apparelGraphics.RemoveAll(record => record.sourceApparel?.def == CustomDefs.Apparel_BombVest);
 				Map.GetComponent<TickManager>()?.AddExplosion(Position);
 			}
 
@@ -397,13 +398,13 @@ namespace ZombieLand
 			base.Kill(dinfo, exactCulprit);
 		}
 
-		// public override void Destroy(DestroyMode mode = DestroyMode.Vanish)
-		// {
-		// 	base.Destroy(mode);
-		// 	Dispose(false);
-		// }
+        public override void Destroy(DestroyMode mode = DestroyMode.Vanish)
+        {
+            base.Destroy(mode);
+            Dispose(false);
+        }
 
-		public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
+        public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
 		{
 			var map = Map;
 			if (map != null)
@@ -707,18 +708,18 @@ namespace ZombieLand
 			return result;
 		}
 
-		public void Render(PawnRenderer renderer, Vector3 drawLoc)
-		{
-			drawLoc.x = (int)(drawLoc.x) + 0.5f;
+        public void Render(PawnRenderer renderer, Vector3 drawLoc)
+        {
+            drawLoc.x = (int)(drawLoc.x) + 0.5f;
 
-			var progress = rubbleCounter / (float)Constants.RUBBLE_AMOUNT;
-			if (progress >= Constants.RUBBLE_EMERGE_DELAY)
-			{
-				var bodyOffset = GenMath.LerpDouble(Constants.RUBBLE_EMERGE_DELAY, 1, -0.45f, 0, progress);
-				renderer.RenderPawnInternal(drawLoc + new Vector3(0, 0, bodyOffset), 0f, true, Rot4.South, renderer.CurRotDrawMode, PawnRenderFlags.DrawNow);
-			}
+            var progress = rubbleCounter / (float)Constants.RUBBLE_AMOUNT;
+            if (progress >= Constants.RUBBLE_EMERGE_DELAY)
+            {
+                var bodyOffset = GenMath.LerpDouble(Constants.RUBBLE_EMERGE_DELAY, 1, -0.45f, 0, progress);
+                renderer.RenderPawnInternal(PawnDrawParms.DefaultFor(renderer.pawn));
+            }
 
-			RenderRubble(drawLoc);
-		}
-	}
+            RenderRubble(drawLoc);
+        }
+    }
 }

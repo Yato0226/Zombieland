@@ -52,8 +52,8 @@ namespace ZombieLand
 	{
 		static bool Prepare() => Constants.CONTAMINATION;
 
-		static IEnumerable<MethodBase> TargetMethods()
-			=> Tools.MethodsImplementing((Verb_MeleeAttack verb) => verb.ApplyMeleeDamageToTarget(default));
+		//static IEnumerable<MethodBase> TargetMethods()
+		//	=> Tools.MethodsImplementing((Verb_MeleeAttack verb) => verb.ApplyMeleeDamageToTarget(default));
 
 		static void Postfix(Verb_MeleeAttack __instance, LocalTargetInfo target, DamageWorker.DamageResult __result)
 		{
@@ -90,7 +90,7 @@ namespace ZombieLand
 	}
 
 	[HarmonyPatch(typeof(ThingOwner), nameof(ThingOwner.TryTransferToContainer))]
-	[HarmonyPatch([typeof(Thing), typeof(ThingOwner), typeof(int), typeof(Thing), typeof(bool)], [ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Out, ArgumentType.Normal])]
+	//[HarmonyPatch([typeof(Thing), typeof(ThingOwner), typeof(int), typeof(Thing), typeof(bool)], [ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Normal, ArgumentType.Out, ArgumentType.Normal])]
 	static class ThingOwner_TryTransferToContainer_Patch
 	{
 		public static sbyte activeThingOwnerMapIndex;
@@ -243,12 +243,12 @@ namespace ZombieLand
 			self.TransferContamination(ZombieSettings.Values.contamination.ingestTransfer * factor, ingester);
 		}
 
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-		{
-			var from = SymbolExtensions.GetMethodInfo((Thing thing, int numToken, float nutritionIngested) => thing.IngestedCalculateAmounts(default, default, out numToken, out nutritionIngested));
-			var to = SymbolExtensions.GetMethodInfo((int numToken, float nutritionIngested) => IngestedCalculateAmounts(default, default, default, out numToken, out nutritionIngested));
-			return instructions.MethodReplacer(from, to);
-		}
+		//static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+		//{
+		//	var from = SymbolExtensions.GetMethodInfo((Thing thing, int numToken, float nutritionIngested) => thing.IngestedCalculateAmounts(default, default, out numToken, out nutritionIngested));
+		//	var to = SymbolExtensions.GetMethodInfo((int numToken, float nutritionIngested) => IngestedCalculateAmounts(default, default, default, out numToken, out nutritionIngested));
+		//	return instructions.MethodReplacer(from, to);
+		//}
 	}
 
 	[HarmonyPatch(typeof(MinifiedThing), nameof(MinifiedThing.SplitOff))]
