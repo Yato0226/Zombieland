@@ -36,7 +36,7 @@ namespace ZombieLand
 		public int intervalTicks = GenDate.TicksPerHour;
 		public float intensity = 0.25f;
 
-		private static readonly float cyanComponent = 155f / 255f;
+		//private static readonly float cyanComponent = 155f / 255f;
 		private static readonly Vector3 drawSize = new(2f, 0f, 4f);
 		private static readonly Vector3 drawOffset = new(0f, 0f, 1f);
 		private static readonly OverlayDrawer ThumperBase = new("Thumper/ThumperBase", ShaderDatabase.Cutout, drawSize: drawSize, drawOffset: drawOffset);
@@ -82,7 +82,7 @@ namespace ZombieLand
 		{
 			base.SpawnSetup(map, respawningAfterLoad);
 
-			nextStates = new[] { PrepareUp, PreparePause, PrepareFall, PrepareImpact, PrepareRest };
+			nextStates = new Action[]{ PrepareUp, PreparePause, PrepareFall, PrepareImpact, PrepareRest };
 			nextStates.Last()();
 			lastImpactTicks = GenTicks.TicksGame;
 
@@ -303,53 +303,53 @@ namespace ZombieLand
 			GenDraw.DrawFieldEdges(ringDrawCells.ToList(), Color.white, null);
 		}
 
-		public override void Draw()
-		{
-			base.Draw();
+		//public override void Draw()
+		//{
+		//	base.Draw();
 
-			float polePosition = 0f;
-			float impactRingColor = 0f;
+		//	float polePosition = 0f;
+		//	float impactRingColor = 0f;
 
-			var max = Mathf.FloorToInt(upwardsTicks * intensity);
-			switch (state)
-			{
-				case State.Resting:
-					break;
-				case State.Upwards:
-					polePosition = GenMath.LerpDoubleClamped(0, max, intensity, 0f, stateValue);
-					break;
-				case State.Paused:
-					polePosition = intensity;
-					break;
-				case State.Falling:
-					// https://www.desmos.com/calculator/wzqh80n9mx
-					var start = Mathf.FloorToInt(Mathf.Sqrt(max / accelerationFactor));
-					var val = (start - stateValue) * (start - stateValue) * accelerationFactor;
-					polePosition = GenMath.LerpDoubleClamped(0, max, intensity, 0f, val);
-					break;
-				case State.Impacting:
-					// https://www.desmos.com/calculator/6mbuuucmcd
-					const float a = -0.8f;
-					const float b = 0.65f;
-					const float c = 1.39f;
-					const float d = 0.5f;
-					var x = c - 2 * GenMath.LerpDoubleClamped(0, impactDurationTicks, 1f, 0f, stateValue);
-					impactRingColor = Mathf.Sin((x * x * x + a) / b) / 2f + d;
-					break;
-			}
+		//	var max = Mathf.FloorToInt(upwardsTicks * intensity);
+		//	switch (state)
+		//	{
+		//		case State.Resting:
+		//			break;
+		//		case State.Upwards:
+		//			polePosition = GenMath.LerpDoubleClamped(0, max, intensity, 0f, stateValue);
+		//			break;
+		//		case State.Paused:
+		//			polePosition = intensity;
+		//			break;
+		//		case State.Falling:
+		//			// https://www.desmos.com/calculator/wzqh80n9mx
+		//			var start = Mathf.FloorToInt(Mathf.Sqrt(max / accelerationFactor));
+		//			var val = (start - stateValue) * (start - stateValue) * accelerationFactor;
+		//			polePosition = GenMath.LerpDoubleClamped(0, max, intensity, 0f, val);
+		//			break;
+		//		case State.Impacting:
+		//			// https://www.desmos.com/calculator/6mbuuucmcd
+		//			const float a = -0.8f;
+		//			const float b = 0.65f;
+		//			const float c = 1.39f;
+		//			const float d = 0.5f;
+		//			var x = c - 2 * GenMath.LerpDoubleClamped(0, impactDurationTicks, 1f, 0f, stateValue);
+		//			impactRingColor = Mathf.Sin((x * x * x + a) / b) / 2f + d;
+		//			break;
+		//	}
 
-			var color = GenMath.LerpDoubleClamped(0f, 1f, 0f, cyanComponent, impactRingColor);
-			var z = GenMath.LerpDoubleClamped(0f, 1f, 1.6f, 0f, polePosition);
+		//	var color = GenMath.LerpDoubleClamped(0f, 1f, 0f, cyanComponent, impactRingColor);
+		//	var z = GenMath.LerpDoubleClamped(0f, 1f, 1.6f, 0f, polePosition);
 
-			var position = DrawPos;
-			ThumperBase.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 0, Color.white);
-			ThumperRing.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 1, new Color(0f, color, color));
-			ThumperBackground.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 2, Color.white);
-			ThumperLight.Draw(position - new Vector3(0, 0, z), AltitudeLayer.BuildingOnTop, altitudeOffset: 3, Color.white);
-			ThumperForeground.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 4, Color.white);
+		//	var position = DrawPos;
+		//	ThumperBase.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 0, Color.white);
+		//	ThumperRing.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 1, new Color(0f, color, color));
+		//	ThumperBackground.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 2, Color.white);
+		//	ThumperLight.Draw(position - new Vector3(0, 0, z), AltitudeLayer.BuildingOnTop, altitudeOffset: 3, Color.white);
+		//	ThumperForeground.Draw(position, AltitudeLayer.BuildingOnTop, altitudeOffset: 4, Color.white);
 
-			if (Find.Selector.IsSelected(this))
-				DrawRadiusRing(Position, Radius);
-		}
+		//	if (Find.Selector.IsSelected(this))
+		//		DrawRadiusRing(Position, Radius);
+		//}
 	}
 }

@@ -4,15 +4,15 @@ using Verse;
 
 namespace ZombieLand
 {
-	[HarmonyPatch(typeof(PawnGraphicSet))]
-	[HarmonyPatch(MethodType.Constructor, typeof(Pawn))]
-	static class PawnGraphicSet_Constructor_With_Pawn_Patch
-	{
-		static void Postfix(PawnGraphicSet __instance)
-		{
-			__instance.flasher = new ZombieDamageFlasher(__instance.pawn);
-		}
-	}
+	//[HarmonyPatch(typeof(PawnGraphicSet))]
+	//[HarmonyPatch(MethodType.Constructor, typeof(Pawn))]
+	//static class PawnGraphicSet_Constructor_With_Pawn_Patch
+	//{
+	//	static void Postfix(PawnGraphicSet __instance)
+	//	{
+	//		__instance.flasher = new ZombieDamageFlasher(__instance.pawn);
+	//	}
+	//}
 
 	[HarmonyPatch(typeof(DamageFlasher))]
 	[HarmonyPatch(nameof(DamageFlasher.Notify_DamageApplied))]
