@@ -461,8 +461,16 @@ namespace ZombieLand
 
 		public void AddMap(Map map)
 		{
-			if (cells.Length != map.Size.x * map.Size.z)
-				throw new Exception($"Map size ({map.Size}) does not match cell array size ({cells.Length})");
+			var expectedCells = map.Size.x * map.Size.z;
+			if (cells.Length != expectedCells)
+			{
+				Log.Warning($"Zombieland: Resizing contamination grid for map {map.uniqueID} from {cells.Length} to {expectedCells} cells");
+				var oldCells = cells;
+				cells = new float[expectedCells];
+				// Copy overlapping data to preserve contamination values
+				var copyLength = Math.Min(oldCells.Length, expectedCells);
+				Array.Copy(oldCells, cells, copyLength);
+			}
 			drawer = new CellBoolDrawer(this, map.Size.x, map.Size.z, 3640, 1f);
 			this.map = map;
 			mapSizeX = map.Size.x;
