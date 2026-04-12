@@ -203,6 +203,8 @@ namespace ZombieLand
 			{
 				var destinations = (Dictionary<Faction, PawnDestinationReservationManager.PawnDestinationSet>)AccessTools.Field(typeof(PawnDestinationReservationManager), "reservedDestinations").GetValue(map.pawnDestinationReservationManager);
 				var zombieFaction = Find.FactionManager.FirstFactionOfDef(ZombieDefOf.Zombies);
+				if (zombieFaction == null)
+					return;
 				if (!destinations.ContainsKey(zombieFaction))
 					_ = map.pawnDestinationReservationManager.GetPawnDestinationSetFor(zombieFaction);
 
