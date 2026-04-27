@@ -344,7 +344,15 @@ namespace ZombieLand
 			Scribe_Values.Look(ref wanderingStyle, "wanderingStyle", WanderingStyle.Smart);
 			Scribe_Values.Look(ref smartWanderingTime, "smartWanderingTime", SmartWanderingTime.Night);
 			Scribe_Values.Look(ref showHealthBar, "showHealthBar", true);
-			Scribe_Collections.Look(ref biomesWithoutZombies, "biomesWithoutZombies", LookMode.Value);
+			try
+			{
+				Scribe_Collections.Look(ref biomesWithoutZombies, "biomesWithoutZombies", LookMode.Value);
+			}
+			catch (Exception ex)
+			{
+				Log.Warning($"Zombieland: Failed to load biomesWithoutZombies, using defaults. Exception: {ex.Message}");
+				biomesWithoutZombies = new HashSet<string>();
+			}
 			Scribe_Values.Look(ref showZombieStats, "showZombieStats", true);
 			Scribe_Values.Look(ref highlightDangerousAreas, "highlightDangerousAreas", false);
 			Scribe_Values.Look(ref disableRandomApparel, "disableRandomApparel", false);
@@ -353,7 +361,15 @@ namespace ZombieLand
 			Scribe_Values.Look(ref childChance, "childChance", 0.02f);
 			Scribe_Values.Look(ref spitterThreat, "spitterThreat", 1f);
 			Scribe_Values.Look(ref minimumZombiesForWallPushing, "minimumZombiesForWallPushing", 18);
-			Scribe_Collections.Look(ref blacklistedApparel, "blacklistedApparel", LookMode.Value);
+			try
+			{
+				Scribe_Collections.Look(ref blacklistedApparel, "blacklistedApparel", LookMode.Value);
+			}
+			catch (Exception ex)
+			{
+				Log.Warning($"Zombieland: Failed to load blacklistedApparel, using defaults. Exception: {ex.Message}");
+				blacklistedApparel = new List<string>();
+			}
 			Scribe_Values.Look(ref contaminationBaseFactor, "contaminationBaseFactor", 1f);
 			Scribe_Values.Look(ref disableCleanContamination, "disableCleanContamination", true);
 			Scribe_Values.Look(ref minContaminationToCleanCell, "minContaminationToCleanCell", 0.1f);
@@ -362,7 +378,15 @@ namespace ZombieLand
 			Scribe_Values.Look(ref minContaminationToCleanItem, "minContaminationToCleanItem", 0.1f);
 
 			Scribe_Deep.Look(ref contamination, "contamination");
-			Scribe_Collections.Look(ref allowedOdysseyLayers, "allowedOdysseyLayers", LookMode.Value);
+			try
+			{
+				Scribe_Collections.Look(ref allowedOdysseyLayers, "allowedOdysseyLayers", LookMode.Value);
+			}
+			catch (Exception ex)
+			{
+				Log.Warning($"Zombieland: Failed to load allowedOdysseyLayers, using defaults. Exception: {ex.Message}");
+				allowedOdysseyLayers = new List<string>();
+			}
 			Scribe_Values.Look(ref suicideBomberIntChance, "suicideBomberIntChance", 1);
 			Scribe_Values.Look(ref toxicSplasherIntChance, "toxicSplasherIntChance", 1);
 			Scribe_Values.Look(ref tankyOperatorIntChance, "tankyOperatorIntChance", 1);

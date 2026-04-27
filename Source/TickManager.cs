@@ -30,18 +30,18 @@ namespace ZombieLand
 			if (RimThreaded == null)
 				managers.Do(tickManager =>
 				{
-					if (tickManager.isFullyInitialized == false)
-                    return;
+					if (tickManager.isFullyInitialized == false || tickManager.zombieStateHandlerFailed)
+						return;
 					switch (tickManager.isInitialized)
 					{
 						case 0:
-							Log.Error("Fatal error! Zombieland's TickManager is not initialized. This should never happen unless you're using another mod that caused an error in MapComponent.FinalizeInit");
+							Log.ErrorOnce("Fatal error! Zombieland's TickManager is not initialized. This should never happen unless you're using another mod that caused an error in MapComponent.FinalizeInit", 133780);
 							break;
 						case 1:
-							Log.Error("Fatal error! Zombieland's TickManager is not initialized. The base implementation never returned which means another mod is causing an error in MapComponent.FinalizeInit");
+							Log.ErrorOnce("Fatal error! Zombieland's TickManager is not initialized. The base implementation never returned which means another mod is causing an error in MapComponent.FinalizeInit", 133781);
 							break;
 						case 2:
-							Log.Error("Fatal error! Zombieland's TickManager is not initialized because its FinalizeInit method caused an error. Maybe another mod caused this error indirectly, you should report this.");
+							Log.ErrorOnce("Fatal error! Zombieland's TickManager is not initialized because its FinalizeInit method caused an error. Maybe another mod caused this error indirectly, you should report this.", 133782);
 							break;
 						case 3:
 							tickManager.ZombieTicking();
@@ -167,31 +167,39 @@ namespace ZombieLand
 
 		public override void FinalizeInit()
 		{
-			Log.Message("TickManager.FinalizeInit() started");
-			isInitialized = 1;
-			base.FinalizeInit();
-			isInitialized = 2;
+			try
+			{
+				Log.Message("TickManager.FinalizeInit() started");
+				isInitialized = 1;
+				base.FinalizeInit();
+				isInitialized = 2;
 
-			            Tools.nextPlayerReachableRegionsUpdate = 0;
-			
-			            // Explicitly update ZombieTicker.managers after loading
-			            var cachedManagers = new List<TickManager>();
-			            foreach (var map in Find.Maps)
-			            {
-			                var comp = map.GetComponent<TickManager>();
-			                if (comp != null)
-			                    cachedManagers.Add(comp);
-			            }
-			            ZombieTicker.managers = cachedManagers;
-			            // End of new code
-			
-			            var grid = map.GetGrid();			grid.IterateCellsQuick(cell => cell.zombieCount = 0);
+				Tools.nextPlayerReachableRegionsUpdate = 0;
 
-			colonyPointsTickCounter = -1;
-			RecalculateColonyPoints();
+				var cachedManagers = new List<TickManager>();
+				foreach (var map in Find.Maps)
+				{
+					var comp = map.GetComponent<TickManager>();
+					if (comp != null)
+						cachedManagers.Add(comp);
+				}
+				ZombieTicker.managers = cachedManagers;
 
-			nextVisibleGridUpdate = 0;
-			RecalculateZombieWanderDestination();
+				var grid = map.GetGrid();			grid.IterateCellsQuick(cell => cell.zombieCount = 0);
+
+				colonyPointsTickCounter = -1;
+				RecalculateColonyPoints();
+
+				nextVisibleGridUpdate = 0;
+				RecalculateZombieWanderDestination();
+			}
+			catch (Exception ex)
+			{
+				Log.Warning($"Zombieland: FinalizeInit failed - {ex.Message}. Attempting delayed initialization...");
+				isInitialized = 2;
+			}
+
+			DelayedInitialize();
 		}
 
 		private void DelayedInitialize()
