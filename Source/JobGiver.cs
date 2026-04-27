@@ -43,6 +43,7 @@ namespace ZombieLand
 
 		protected override Job TryGiveJob(Pawn pawn)
 		{
+			if (pawn == null) return null;
 			if (pawn is not Zombie zombie || zombie.isAlbino == false)
 				return null;
 			zombie.jobs.StopAll();
@@ -51,6 +52,7 @@ namespace ZombieLand
 
 		public override ThinkResult TryIssueJobPackage(Pawn pawn, JobIssueParams jobParams)
 		{
+			if (pawn == null) return ThinkResult.NoJob;
 			if (pawn is not Zombie zombie || zombie.isAlbino == false)
 				return ThinkResult.NoJob;
 			return base.TryIssueJobPackage(pawn, jobParams);
@@ -66,6 +68,7 @@ namespace ZombieLand
 
 		protected override Job TryGiveJob(Pawn pawn)
 		{
+			if (pawn == null) return null;
 			if (pawn is not ZombieBlob)
 				return null;
 			pawn.jobs.StopAll();
@@ -74,6 +77,7 @@ namespace ZombieLand
 
 		public override ThinkResult TryIssueJobPackage(Pawn pawn, JobIssueParams jobParams)
 		{
+			if (pawn == null) return ThinkResult.NoJob;
 			if (pawn is not ZombieBlob)
 				return ThinkResult.NoJob;
 			return base.TryIssueJobPackage(pawn, jobParams);
@@ -89,6 +93,7 @@ namespace ZombieLand
 
 		protected override Job TryGiveJob(Pawn pawn)
 		{
+			if (pawn == null) return null;
 			if (pawn is not ZombieSpitter)
 				return null;
 			pawn.jobs.StopAll();
@@ -97,6 +102,7 @@ namespace ZombieLand
 
 		public override ThinkResult TryIssueJobPackage(Pawn pawn, JobIssueParams jobParams)
 		{
+			if (pawn == null) return ThinkResult.NoJob;
 			if (pawn is not ZombieSpitter)
 				return ThinkResult.NoJob;
 			return base.TryIssueJobPackage(pawn, jobParams);
@@ -112,11 +118,13 @@ namespace ZombieLand
 
 		protected override Job TryGiveJob(Pawn pawn)
 		{
+			if (pawn == null) return null;
 			return JobMaker.MakeJob(DefDatabase<JobDef>.GetNamed("ExtractZombieSerum"));
 		}
 
 		public override ThinkResult TryIssueJobPackage(Pawn pawn, JobIssueParams jobParams)
 		{
+			if (pawn == null) return ThinkResult.NoJob;
 			if (ZombieSettings.Values.corpsesExtractAmount == 0)
 				return ThinkResult.NoJob;
 			return base.TryIssueJobPackage(pawn, jobParams);
@@ -132,11 +140,13 @@ namespace ZombieLand
 
 		protected override Job TryGiveJob(Pawn pawn)
 		{
+			if (pawn == null) return null;
 			return JobMaker.MakeJob(DefDatabase<JobDef>.GetNamed("DoubleTap"));
 		}
 
 		public override ThinkResult TryIssueJobPackage(Pawn pawn, JobIssueParams jobParams)
 		{
+			if (pawn == null) return ThinkResult.NoJob;
 			if (ZombieSettings.Values.hoursAfterDeathToBecomeZombie == -1)
 				return ThinkResult.NoJob;
 			return base.TryIssueJobPackage(pawn, jobParams);

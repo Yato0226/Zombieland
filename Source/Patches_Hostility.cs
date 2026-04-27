@@ -290,7 +290,7 @@ namespace ZombieLand
 			}
 
 			// attacker is player
-			if (attacker.Faction.IsPlayer)
+			if (attacker.Faction?.IsPlayer == true)
 			{
 				validator = (Thing t) =>
 				{
@@ -366,7 +366,7 @@ namespace ZombieLand
 				Thing attacker = searcher as Pawn;
 				attacker ??= searcher.Thing;
 
-				if (attacker != null && attacker.Faction.HostileTo(Faction.OfPlayer) == false)
+				if (attacker?.Faction?.HostileTo(Faction.OfPlayer) == false)
 				{
 					var verb = searcher.CurrentEffectiveVerb;
 					if (verb != null)
@@ -377,7 +377,7 @@ namespace ZombieLand
 						{
 							var maxDownedRangeSquared = 6 * 6;
 							var maxRangeSquared = (int)(props.range * props.range);
-							var tickManager = attacker.Map.GetComponent<TickManager>();
+							var tickManager = attacker.Map?.GetComponent<TickManager>();
 							var pos = attacker.Position;
 							int zombiePrioritySorter(Zombie zombie)
 							{
