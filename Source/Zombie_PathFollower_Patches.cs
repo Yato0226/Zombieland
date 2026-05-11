@@ -12,8 +12,8 @@ namespace ZombieLand
 	    {
 	        private static FieldInfo _pawnField;
 	        private static MethodInfo _buildingBlockingNextPathCellMethod;
-	
-	        static bool Prepare()
+		
+        static bool Prepare()
 	        {
 	            _pawnField = AccessTools.Field(typeof(Pawn_PathFollower), "pawn");
 	            _buildingBlockingNextPathCellMethod = AccessTools.Method(typeof(Pawn_PathFollower), "BuildingBlockingNextPathCell");
@@ -54,36 +54,62 @@ namespace ZombieLand
   }
 
 
+        [HarmonyPatch(typeof(Pawn_PathFollower), "PatherTick")]
+        public static class PatherTick_Patch
+        {
+            
+            static readonly AccessTools.FieldRef<Pawn_PathFollower, Pawn> GetPawn =
+                AccessTools.FieldRefAccess<Pawn_PathFollower, Pawn>("pawn");
 
-		        [HarmonyPatch("PatherTick")]
-		        [HarmonyPrefix]
-		        public static bool PatherTick_Patch(Pawn_PathFollower __instance)
-		        {
-		            var pawn = (Pawn)_pawnField.GetValue(__instance);
-		            if (pawn is Zombie zombie)
-		            {
-		                var building = (Building)_buildingBlockingNextPathCellMethod.Invoke(__instance, null);
-		                                if (building is Building_Door door && !door.FreePassage)
-		                                {
-		                                    if (pawn.CurJob == null || pawn.CurJob.def != JobDefOf.AttackMelee)
-		                                    {
-		                                        var job = JobMaker.MakeJob(JobDefOf.AttackMelee, building);
-		                                        pawn.jobs.StartJob(job, JobCondition.Incompletable);
-		                                    }
-		                                    return true;
-		                                }
-		                var blockingPawn = PawnUtility.PawnBlockingPathAt(__instance.nextCell, pawn);
-		                if (blockingPawn != null && blockingPawn != pawn)
-		                {
-		                    if (pawn.CurJob == null || pawn.CurJob.def != JobDefOf.AttackMelee)
-		                    {
-		                        var job = JobMaker.MakeJob(JobDefOf.AttackMelee, blockingPawn);
-		                        pawn.jobs.StartJob(job, JobCondition.Incompletable);
-		                    }
-		                    return true;
-		                }
-		            }
-		
-		            return true;
-		        }	}
+            static readonly Func<Pawn_PathFollower, Building> GetBlockingBuilding =
+                AccessTools.MethodDelegate<Func<Pawn_PathFollower, Building>>(
+                    AccessTools.Method(typeof(Pawn_PathFollower), "BuildingBlockingNextPathCell")
+                );
+
+            [HarmonyPrefix]
+            public static bool Prefix(Pawn_PathFollower __instance)
+            {
+                var pawn = GetPawn(__instance);
+
+                if (!(pawn is Zombie zombie))
+                    return true;
+
+                if (!zombie.IsHashIntervalTick(10))
+                    return true;
+
+                var curJob = pawn.CurJob;
+
+                if (curJob?.def == JobDefOf.AttackMelee)
+                    return true;
+
+                var building = GetBlockingBuilding(__instance);
+                if (building is Building_Door door && !door.FreePassage)
+                {
+                    if (curJob?.targetA.Thing != building)
+                    {
+                        pawn.jobs.StartJob(
+                            JobMaker.MakeJob(JobDefOf.AttackMelee, building),
+                            JobCondition.Incompletable
+                        );
+                    }
+                    return true;
+                }
+
+                var blockingPawn = PawnUtility.PawnBlockingPathAt(__instance.nextCell, pawn);
+
+                if (blockingPawn != null && blockingPawn != pawn)
+                {
+                    if (curJob?.targetA.Thing != blockingPawn)
+                    {
+                        pawn.jobs.StartJob(
+                            JobMaker.MakeJob(JobDefOf.AttackMelee, blockingPawn),
+                            JobCondition.Incompletable
+                        );
+                    }
+                }
+
+                return true;
+            }
+        }
+    }
 }

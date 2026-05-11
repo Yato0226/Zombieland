@@ -393,117 +393,114 @@ namespace ZombieLand
 			}
 		}
 
-		// custom ticking
-		// Zal - made some performance improvements
-		[HarmonyPatch(typeof(Verse.TickManager))]
-		[HarmonyPatch(nameof(Verse.TickManager.TickManagerUpdate))]
-		static class Verse_TickManager_TickManagerUpdate_Patch
-		{
-			private static readonly MethodInfo m_CurTimePerTick =
-				AccessTools.PropertyGetter(typeof(Verse.TickManager), "CurTimePerTick");
+        // custom ticking
+        // Zal - made some performance improvements
+        [HarmonyPatch(typeof(Verse.TickManager))]
+        [HarmonyPatch(nameof(Verse.TickManager.TickManagerUpdate))]
+        static class Verse_TickManager_TickManagerUpdate_Patch
+        {
+            // Fast field access (no boxing)
+            private static readonly AccessTools.FieldRef<Verse.TickManager, float> realTimeToTickThroughRef =
+                AccessTools.FieldRefAccess<Verse.TickManager, float>("realTimeToTickThrough");
 
-			private static readonly FieldInfo f_realTimeToTickThrough =
-				AccessTools.Field(typeof(Verse.TickManager), "realTimeToTickThrough");
+            // Private instance property getter compiled into a delegate (fast)
+            private static readonly Func<Verse.TickManager, float> CurTimePerTickGetter =
+                (Func<Verse.TickManager, float>)AccessTools
+                    .PropertyGetter(typeof(Verse.TickManager), "CurTimePerTick")
+                    .CreateDelegate(typeof(Func<Verse.TickManager, float>));
 
-			private static List<TickManager> cachedManagers = new();
-			private static int lastMapCount = -1;
+            private static readonly List<TickManager> cachedManagers = new();
+            private static int lastMapCount = -1;
 
-			static void Prefix(Verse.TickManager __instance)
-			{
-				try
-				{
-					// advance any external zombie processor
-					_ = ZombieWanderer.processor.MoveNext();
+            static void Prefix(Verse.TickManager __instance)
+            {
+                try
+                {
+                    ZombieWanderer.processor?.MoveNext();
 
-					if (Find.TickManager.Paused)
-						return;
+                    if (__instance.Paused)
+                        return;
 
-					ZombieTicker.zombiesTicked = 0;
+                    ZombieTicker.zombiesTicked = 0;
 
-					// Cache manager list only when maps change
-					if (Find.Maps.Count != lastMapCount)
-					{
-						cachedManagers.Clear();
-						foreach (var map in Find.Maps)
-						{
-							var comp = map.GetComponent<TickManager>();
-							if (comp != null)
-								cachedManagers.Add(comp);
-						}
-						ZombieTicker.managers = cachedManagers;
-						lastMapCount = Find.Maps.Count;
-					}
+                    // Cache managers only when maps change
+                    var maps = Find.Maps;
+                    int mapCount = maps.Count;
 
-					// Use cached reflection accessors
-					float curTimePerTick = (float)m_CurTimePerTick.Invoke(__instance, null);
-					float realTimeToTickThrough = (float)f_realTimeToTickThrough.GetValue(__instance);
+                    if (mapCount != lastMapCount)
+                    {
+                        cachedManagers.Clear();
 
-					// Basic tick calculation
-					float n1 = realTimeToTickThrough / curTimePerTick;
-					float n2 = __instance.TickRateMultiplier * 2f;
-					int loopEstimate = Mathf.FloorToInt(Mathf.Min(n1, n2));
+                        for (int i = 0; i < mapCount; i++)
+                        {
+                            var comp = maps[i].GetComponent<TickManager>();
+                            if (comp != null)
+                                cachedManagers.Add(comp);
+                        }
 
-					// Count active zombies efficiently (iterate HashSet)
-					//int liveZombies = 0;
-					// foreach (var tm in cachedManagers)
-					//  {
-					//     if (tm.allZombiesCached == null)
-					//         continue;
+                        ZombieTicker.managers = cachedManagers;
+                        lastMapCount = mapCount;
+                    }
 
-					//     foreach (var z in tm.allZombiesCached)
-					//     {
-					//        if (z != null && z.Spawned && !z.Dead)
-					//liveZombies++;
-					//    }
-					// }
+                    // Use compiled delegate and FieldRef
+                    float curTimePerTick = CurTimePerTickGetter(__instance);
+                    float realTimeToTickThrough = realTimeToTickThroughRef(__instance);
 
-					// new
-					// Use cached live zombie counts instead of enumerating
-					int liveZombies = 0;
-					foreach (var tm in cachedManagers)
-					{
-						liveZombies += tm.LiveZombieCount;
-					}
+                    float tickBudget = realTimeToTickThrough / curTimePerTick;
+                    float tickCap = __instance.TickRateMultiplier * 2f;
+                    int loopEstimate = (int)Mathf.Min(tickBudget, tickCap);
 
+                    // Cheap live zombie count aggregation
+                    int liveZombies = 0;
+                    for (int i = 0; i < cachedManagers.Count; i++)
+                    {
+                        liveZombies += cachedManagers[i].LiveZombieCount;
+                    }
 
-					ZombieTicker.maxTicking = Mathf.FloorToInt(loopEstimate * liveZombies);
-					ZombieTicker.currentTicking = Mathf.FloorToInt(ZombieTicker.maxTicking * ZombieTicker.PercentTicking);
-				}
-				catch (System.Exception ex)
-				{
-					Log.ErrorOnce($"TickManagerUpdate zombie prefix failed: {ex}", 133781);
-				}
-			}
+                    int maxTicking = loopEstimate * liveZombies;
+                    ZombieTicker.maxTicking = maxTicking;
 
-			static void Postfix(Verse.TickManager __instance)
-			{
-				if (__instance.Paused)
-					return;
+                    ZombieTicker.currentTicking = (int)(maxTicking * ZombieTicker.PercentTicking);
+                }
+                catch (System.Exception ex)
+                {
+                    Log.ErrorOnce($"TickManagerUpdate zombie prefix failed: {ex}", 133781);
+                }
+            }
 
-				int ticked = ZombieTicker.zombiesTicked;
-				int current = ZombieTicker.currentTicking;
-				if (current == 0)
-				{
-					ZombieTicker.PercentTicking = 1f;
-					return;
-				}
+            static void Postfix(Verse.TickManager __instance)
+            {
+                if (__instance.Paused)
+                    return;
 
-				float newPercent = ticked == 0 ? 1f : (ticked / (float)current);
-				if (ticked > current - 100)
-					newPercent = Mathf.Min(1f, newPercent + 0.5f);
+                int ticked = ZombieTicker.zombiesTicked;
+                int current = ZombieTicker.currentTicking;
 
-				ZombieTicker.PercentTicking = newPercent;
-			}
-		}
-		[HarmonyPatch(typeof(Verse.TickManager))]
+                if (current == 0)
+                {
+                    ZombieTicker.PercentTicking = 1f;
+                    return;
+                }
+
+                float newPercent = ticked > 0 ? (float)ticked / current : 1f;
+
+                if (ticked > current - 100)
+                    newPercent = Mathf.Min(1f, newPercent + 0.5f);
+
+                ZombieTicker.PercentTicking = newPercent;
+            }
+        }
+
+        [HarmonyPatch(typeof(Verse.TickManager))]
 		[HarmonyPatch(nameof(Verse.TickManager.DoSingleTick))]
 		static class TickManager_DoSingleTick_Patch
 		{
 			static void Postfix()
 			{
-				ZombieTicker.DoSingleTick();
-			}
+                ZombieTicker.DoSingleTick();                
+            }
 		}
+
 		[HarmonyPatch(typeof(Verse.TickManager), "NothingHappeningInGame")]
 		static class Verse_TickManager_NothingHappeningInGame_Patch
 		{ 

@@ -27,7 +27,10 @@ namespace ZombieLand
 
 		public static void DoSingleTick()
 		{
-			if (RimThreaded == null)
+            if (Find.TickManager.TicksGame % 3 != 0)
+                return; //new
+
+            if (RimThreaded == null)
 				managers.Do(tickManager =>
 				{
 					if (tickManager.isFullyInitialized == false || tickManager.zombieStateHandlerFailed)
@@ -415,6 +418,7 @@ namespace ZombieLand
         // new
         static readonly List<Zombie> _tmpZombieList = new();
         static readonly System.Random _rng = new System.Random();
+        static int _lastRebuildTick = -1;
 
         public static void PrepareThreadedTicking(object input)
         {
@@ -422,13 +426,19 @@ namespace ZombieLand
 
             float f = ZombieTicker.PercentTicking;
 
-            // Build an indexable list once (cheap enumerator -> add)
-            _tmpZombieList.Clear();
-            if (tickManager.allZombiesCached != null)
+            // Rebuild less often (HUGE win)
+            int curTick = Find.TickManager.TicksGame;
+            if (_lastRebuildTick != curTick && curTick % 60 == 0)
             {
-                foreach (var z in tickManager.allZombiesCached)
-                    if (z != null && z.Spawned && !z.Dead)
-                        _tmpZombieList.Add(z);
+                _lastRebuildTick = curTick;
+
+                _tmpZombieList.Clear();
+                if (tickManager.allZombiesCached != null)
+                {
+                    foreach (var z in tickManager.allZombiesCached)
+                        if (z != null && z.Spawned && !z.Dead)
+                            _tmpZombieList.Add(z);
+                }
             }
 
             int total = _tmpZombieList.Count;
@@ -439,15 +449,19 @@ namespace ZombieLand
                 return;
             }
 
+            // Fast path: everything ticks
             if (f >= 1f)
             {
-                // fast path: copy to array (reuse if possible)
-                tickManager.currentZombiesTicking = _tmpZombieList.ToArray();
-                tickManager.currentZombiesTickingIndex = tickManager.currentZombiesTicking.Length;
+                // Avoid ToArray() if possible (optional micro-opt)
+                var arr = new Zombie[total];
+                for (int i = 0; i < total; i++)
+                    arr[i] = _tmpZombieList[i];
+
+                tickManager.currentZombiesTicking = arr;
+                tickManager.currentZombiesTickingIndex = total;
                 return;
             }
 
-            // pick k = floor(total * f) unique random elements efficiently
             int k = Mathf.FloorToInt(total * f);
             if (k <= 0)
             {
@@ -456,33 +470,20 @@ namespace ZombieLand
                 return;
             }
 
-            // Partial Fisher-Yates: pick k items into result array without full shuffle
+            // Round-robin instead of RNG
+            int start = tickManager.currentZombiesTickingIndex;
+
             var result = new Zombie[k];
-            // If k > total/2 it is cheaper to shuffle once; choose strategy
-            if (k * 4 > total) // heuristic: if k > total/4, shuffle whole array
+
+            for (int i = 0; i < k; i++)
             {
-                // Full Fisher-Yates shuffle in-place (only up to needed)
-                for (int i = total - 1; i > 0; i--)
-                {
-                    int j = _rng.Next(i + 1);
-                    var tmp = _tmpZombieList[i]; _tmpZombieList[i] = _tmpZombieList[j]; _tmpZombieList[j] = tmp;
-                }
-                for (int i = 0; i < k; i++) result[i] = _tmpZombieList[i];
-            }
-            else
-            {
-                // Partial selection: sample k distinct items
-                // Use an in-place partial Fisher-Yates variant
-                for (int i = 0; i < k; i++)
-                {
-                    int j = _rng.Next(i, total); // pick random from [i..total-1]
-                    result[i] = _tmpZombieList[j];
-                    _tmpZombieList[j] = _tmpZombieList[i]; // move used slot into i to avoid duplicates
-                }
+                result[i] = _tmpZombieList[(start + i) % total];
             }
 
+            // advance index for next tick
+            tickManager.currentZombiesTickingIndex = (start + k) % total;
+
             tickManager.currentZombiesTicking = result;
-            tickManager.currentZombiesTickingIndex = result.Length;
         }
 
         public static void DoThreadedSingleTick(object input)

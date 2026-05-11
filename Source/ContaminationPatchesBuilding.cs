@@ -401,21 +401,35 @@ namespace ZombieLand
 	{
 		static bool Prepare() => Constants.CONTAMINATION;
 
-		static MethodBase TargetMethod()
-		{
-			var m_RepairTick = SymbolExtensions.GetMethodInfo(() => MechRepairUtility.RepairTick(default, default));
-			return AccessTools.FirstMethod(typeof(JobDriver_RepairMech), method => method.CallsMethod(m_RepairTick));
-		}
+        static MethodBase TargetMethod()
+        {
+            var m_RepairTick = SymbolExtensions.GetMethodInfo(() => MechRepairUtility.RepairTick(default));
 
-		static void RepairTick(Pawn mech, int delta, JobDriver_RepairMech jobDriver)
-		{
-			JobDriver_Repair_MakeNewToils_Patch.Equalize(jobDriver.pawn, mech);
-			MechRepairUtility.RepairTick(mech, delta);
-		}
+            return AccessTools.FirstMethod(
+                typeof(JobDriver_RepairMech),
+                method => method.CallsMethod(m_RepairTick)
+            );
+        }
 
-		static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-			=> instructions.ExtraArgumentsTranspiler(typeof(MechRepairUtility), () => RepairTick(default, default, default), new[] { Ldarg_0 }, 1);
-	}
+        static void RepairTick(Pawn mech, JobDriver_RepairMech jobDriver)
+        {
+            JobDriver_Repair_MakeNewToils_Patch.Equalize(jobDriver.pawn, mech);
+            MechRepairUtility.RepairTick(mech);
+        }
+
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
+        {
+            return instructions.ExtraArgumentsTranspiler(
+                typeof(MechRepairUtility),
+                () => RepairTick(default, default),
+                new[] { Ldarg_0 },
+                1, // still 1 extra arg
+                false,
+                MethodType.Normal,
+                AccessTools.Method(typeof(MechRepairUtility), nameof(MechRepairUtility.RepairTick), new[] { typeof(Pawn) })
+            );
+        }
+    }
 
 
 }
